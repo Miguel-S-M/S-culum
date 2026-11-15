@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aldeburgo: MVP de vida</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Instrument+Sans:wght@400;600&display=swap">
+<style>
+:root{--bg:#e9e7ef;--panel:#f7f6fa;--ink:#1f1b2e;--mute:#6a647e;--line:#cdc9da;--acc:#5b3fa0;--good:#2f7a5a;--bad:#b3402f;--on:#1f1b2e;--onink:#f7f6fa;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#13101f;--panel:#1d1930;--ink:#e8e4f3;--mute:#9a93b3;--line:#383054;--acc:#a58cf0;--good:#5fb083;--bad:#e0705d;--on:#e8e4f3;--onink:#13101f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#13101f;--panel:#1d1930;--ink:#e8e4f3;--mute:#9a93b3;--line:#383054;--acc:#a58cf0;--good:#5fb083;--bad:#e0705d;--on:#e8e4f3;--onink:#13101f;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 "Instrument Sans",system-ui,sans-serif}
+.w{max-width:1200px;margin:0 auto;padding:14px}
+h1,h2{font-family:"Bricolage Grotesque",Georgia,serif;margin:0;line-height:1.15}
+h1{font-size:1.7rem}h2{font-size:1.1rem;margin-bottom:8px}
+.top{display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.top p{margin:2px 0 0;color:var(--mute)}
+.grid{display:grid;grid-template-columns:300px 1fr 1fr;gap:12px;align-items:start}
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px}
+.pt{width:48px;height:48px;border-radius:4px;display:grid;place-items:center;font:700 1.4rem "Bricolage Grotesque",serif;color:#fff;flex:none;image-rendering:pixelated}
+.row{display:flex;gap:10px;align-items:center}
+.kv{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:3px 0}
+.kv span:first-child{color:var(--mute)}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:9px 14px;font:600 .95rem "Instrument Sans",sans-serif;cursor:pointer}
+.btn.alt{background:none;color:var(--ink);border:1px solid var(--ink)}
+.btn:disabled{opacity:.5;cursor:default}
+select,textarea{width:100%;font:inherit;padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);margin-bottom:8px}
+textarea{height:70px;font-size:.8rem}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.npcs{max-height:360px;overflow:auto}
+.np{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:none;color:inherit;border:1px solid transparent;border-bottom-color:var(--line);padding:6px;font:inherit;cursor:pointer}
+.np .pt{width:30px;height:30px;font-size:.9rem}
+.np.sel{border-color:var(--acc);background:var(--bg)}
+.np small{color:var(--mute);display:block}
+.np .r{margin-left:auto;font-weight:600}
+.np.dead{opacity:.45}
+.ev{border-left:4px solid var(--acc);padding-left:10px;margin-bottom:10px}
+.ev .btn{display:block;width:100%;margin-top:6px;text-align:left}
+.log{margin:0;padding:0;list-style:none;font-size:.9rem;color:var(--mute);max-height:300px;overflow:auto}
+.log li{padding:3px 0;border-bottom:1px solid var(--line)}
+.bar{height:6px;background:var(--line);border-radius:3px;margin:4px 0 8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+.btn.alt.on{background:var(--on);color:var(--onink)}.btns .btn{padding:7px 10px;font-size:.85rem}
+.msg{color:var(--bad);min-height:1.3em;font-size:.9rem;margin:0 0 6px}
+button:focus-visible,.np:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="w">
+  <div class="top"><div><h1>Aldeburgo</h1><p id="cal"></p></div><div class="btns"><button class="btn alt" id="auto" onclick="auto()">Tempo automático: desligado</button></div></div>
+  <div class="grid">
+    <div><div class="card" id="me"></div>
+      <div class="card"><h2>Backup</h2><textarea id="bk" placeholder="Cole aqui um save para importar"></textarea><div class="btns"><button class="btn alt" onclick="save(1)">Salvar</button><button class="btn alt" onclick="exp()">Exportar</button><button class="btn alt" onclick="imp()">Importar</button><button class="btn alt" id="nw" onclick="nw()">Novo personagem</button></div></div></div>
+    <div>
+      <div class="card"><h2>Semana</h2><div id="ev"></div><p class="msg" id="msg"></p>
+        <div class="btns" id="cats"></div><div id="acts"></div><p id="hint" style="color:var(--mute);margin:6px 0"></p><select id="act" style="display:none"><option value="work">Trabalhar</option><option value="study">Estudar</option><option value="rest">Descansar</option><option value="soc">Socializar com a pessoa selecionada</option><option value="help">Pedir ajuda à pessoa selecionada</option><option value="contact">Propor parceria comercial à pessoa selecionada</option><option value="marry">Pedir a pessoa selecionada em casamento</option><option value="ad">Fazer propaganda dos negócios (15)</option><option value="expand">Expandir um negócio</option><option value="sell">Vender o último negócio</option><option value="explore">Explorar a mata (caçar, capturar ou domesticar criaturas)</option><option value="charity">Fazer caridade (10, ganha prestígio)</option><option value="title">Pleitear o próximo título de nobreza</option><option value="office">Disputar o próximo cargo político</option><option value="apply">Candidatar-se à vaga selecionada</option><option value="open">Abrir o negócio escolhido abaixo</option><option value="manage">Gerir meus negócios</option><option value="skill">Usar a habilidade escolhida abaixo</option><option value="fight">Buscar combate (caçar ameaças)</option><option value="train">Treinar a energia escolhida abaixo</option></select><select id="bz"></select><select id="ks"></select><select id="gd"></select><select id="pa"></select><select id="dc"></select><select id="hr"></select><select id="or"><option value="work">Trabalhar nos negócios</option><option value="guard">Proteger você (recupera saúde)</option><option value="hunt">Caçar criaturas</option><option value="spy">Colher informações</option><option value="charm">Fazer contatos</option><option value="trade">Negociar em caravanas</option></select>
+        <select id="en"><option value="0">Ki</option><option value="1">Mana</option><option value="2">Energia espiritual</option><option value="3">Energia vital</option></select>
+        <button class="btn" id="go" onclick="step()">Executar a ação escolhida e avançar a semana</button></div>
+      <div class="card"><h2>Vagas de emprego</h2><div class="npcs" id="ops"></div></div><div class="card"><h2>Diário</h2><ul class="log" id="log"></ul></div>
+    </div>
+    <div><div class="card"><h2>Pessoas da cidade</h2><div class="npcs" id="city"></div></div><div class="card"><h2>Economia</h2><div id="eco"></div></div><div class="card" id="npc"></div></div>
+  </div>
+</div>
+<script>
+var KEY="aldeburgo-mvp-v2",SPN=["Humano","Elfo","Anão","Povo-fera"],EN=["Ki","Mana","Espiritual","Vital"],TN=["Ambição","Coragem","Lealdade","Curiosidade"];
+var SP={"Humano":{max:80,e:[1,1,1,1]},"Elfo":{max:300,e:[.8,1.6,1.3,.7]},"Anão":{max:200,e:[1.4,.6,.9,1]},"Povo-fera":{max:60,e:[1.1,.6,1,1.6]}};
+var JOBS={"Agricultor":6,"Artesão":9,"Comerciante":12,"Guarda":10,"Estudioso":7,"Sacerdote":8,"Pescador":7,"Ferreiro":11,"Avaliador":14,"Curandeiro":13,"Mensageiro":10,"Mago":12,"Artista Marcial":11},JN=Object.keys(JOBS);
+var JT={"Agricultor":"animais","Guarda":"percepcao","Comerciante":"comercio","Estudioso":"ensino","Sacerdote":"cura","Ferreiro":"forca","Mensageiro":"logistica","Artesão":"artesao"},JQ={"Avaliador":"avaliar","Curandeiro":"cura"},JE={"Mago":[1,1],"Artista Marcial":[0,1]},CC=["Guarda","Mago","Artista Marcial"];
+var TG={avaliar:"avaliação de itens",cura:"cura",forca:"força",percepcao:"percepção",comercio:"comércio",persuasao:"persuasão",artesao:"artesanato",logistica:"logística",ensino:"ensino",animais:"animais"};
+var SK=[
+[["Respiração Controlada","Recupera o fôlego e aguenta jornadas longas.","forca"],["Punho de Ferro","Carrega peso e golpeia sem se machucar.","forca"],["Passo Leve","Percorre longas distâncias sem cansar.","logistica"],["Olhar de Combate","Percebe movimentos e ameaças antes dos outros.","percepcao"],["Corpo de Aço","Resiste a golpes e a trabalhos brutais.","forca"]],
+[["Luz Arcana","Ilumina oficinas e refina detalhes de peças.","artesao"],["Visão de Raio X","Enxerga o interior dos objetos: ideal para avaliar itens.","avaliar"],["Selo de Conservação","Mantém mercadorias frescas por mais tempo.","comercio"],["Tradução Arcana","Entende qualquer idioma e fecha negócios com estrangeiros.","persuasao"],["Portal Menor","Abre atalhos para entregar cargas.","logistica"]],
+[["Sentir Emoções","Percebe o que as pessoas escondem.","persuasao"],["Prece de Cura","Alivia dores e febres.","cura"],["Presságio","Pressente riscos em negócios e viagens.","percepcao"],["Voz Serena","Acalma multidões e dá peso às suas palavras.","persuasao"],["Comunhão","Ensina e inspira discípulos.","ensino"]],
+[["Pele Resistente","Suporta frio, calor e trabalho duro.","forca"],["Faro Aguçado","Encontra pistas, ervas e rotas.","percepcao"],["Regeneração","Fecha ferimentos depressa, em você e em outros.","cura"],["Voz dos Bichos","Entende e conduz animais de trabalho.","animais"],["Fúria Selvagem","Explosão de força e coragem.","forca"]]];
+var BZ={"Barraca":{c:30,i:10,u:4},"Oficina":{c:70,i:18,u:8},"Loja":{c:120,i:28,u:14},"Casa de Avaliações":{c:50,i:22,u:6,q:"avaliar"},"Consultório de Curas":{c:60,i:20,u:6,q:"cura"},"Mensageria":{c:60,i:19,u:8,q:"logistica"},"Taverna":{c:90,i:24,u:10},"Estalagem":{c:110,i:27,u:12},"Ferraria":{c:100,i:26,u:10,q:"forca"},"Alquimia":{c:140,i:34,u:14,q:"avaliar"},"Caravana":{c:150,i:36,u:15,q:"logistica"},"Casa de Câmbio":{c:220,i:48,u:20,q:"persuasao"},"Escola":{c:100,i:25,u:9,q:"ensino"}};
+function lvl(i){return Math.min(5,Math.floor(S.me.tr[i]/15));}
+function nt(t){var n=0;for(var i=0;i<4;i++)for(var j=0;j<lvl(i);j++)if(SK[i][j][2]===t)n++;return n;}
+function qok(j){return(!JQ[j]||ht(JQ[j]))&&(!JE[j]||lvl(JE[j][0])>=JE[j][1]);}
+function qtx(j){var r=[];if(JQ[j])r.push('habilidade de '+TG[JQ[j]]);if(JE[j])r.push(EN[JE[j][0]]+' nível '+JE[j][1]);return r.join(' e ');}
+var AC={avaliar:['Avaliou itens e cobrou comissão',[10,25]],cura:['Atendeu doentes',[8,18]],forca:['Fez um serviço pesado',[7,15]],percepcao:['Fez uma ronda e achou ervas e achados',[6,14]],comercio:['Negociou um lote de mercadorias',[4,22]],persuasao:['Intermediou um acordo',[3,14]],artesao:['Produziu peças finas',[8,18]],logistica:['Fez uma entrega rápida',[8,20]],ensino:['Deu aulas',[6,14]],animais:['Conduziu animais de trabalho',[7,15]]};
+function useSk(v){var p=v.split('-'),i=+p[0],j=+p[1],m=S.me,s=SK[i][j],a=AC[s[2]],g=Math.round(ri(a[1][0],a[1][1])*(.8+.2*(j+1)));m.m+=g;m.en-=10;if(s[2]==='cura')m.h+=3;if(s[2]==='ensino')m.k+=2;if(s[2]==='persuasao'){var n=npcR();if(n)n.rel=Math.min(100,n.rel+6);}lg('Usou '+s[0]+': '+a[0]+' (+'+g+').');}
+var FOES=[['Bandido',40,6,10,.7],['Lobo selvagem',35,7,11,.7],['Assaltante armado',55,8,13,.65],['Cultista exaltado',45,7,12,.7]];
+function foe(ctx,cr){var f=cr?[cr[0],cr[1],cr[2],cr[3],.7]:ctx==='amb'?FOES[0]:pk(FOES),s=1+(lvl(0)+lvl(1)+lvl(2)+lvl(3))*.06,h=Math.round(f[1]*s);S.cb={e:{n:f[0],hp:h,mhp:h,a:[Math.round(f[2]*s),Math.round(f[3]*s)],hit:f[4]},d:0,l:[f[0]+' avança contra você.'],rw:cr?Math.round(cr[4]*1.5):Math.round(ri(10,22)*s),ctx:ctx};}
+function cbHtml(){var c=S.cb,e=c.e,m=S.me,b='<button class="btn alt" onclick="cbAct(0)">Atacar</button>';if(lvl(0)>0)b+='<button class="btn alt" onclick="cbAct(1)">Técnica de Ki (15 de energia)</button>';if(lvl(1)>0)b+='<button class="btn alt" onclick="cbAct(2)">Magia (15 de energia)</button>';if(nt('cura')>0)b+='<button class="btn alt" onclick="cbAct(3)">Curar-se (15 de energia)</button>';b+='<button class="btn alt" onclick="cbAct(4)">Defender</button><button class="btn alt" onclick="cbAct(5)">Fugir</button>';return'<div class="ev"><h2>Combate: '+e.n+'</h2><p>'+e.n+': '+e.hp+'/'+e.mhp+' de vida. Você: '+m.h+' de saúde, '+m.en+' de energia.</p><p style="color:var(--mute)">'+c.l.slice(-4).join(' ')+'</p>'+b+'</div>';}
+function cbEnd(){S.cb=null;cm();save();draw();}
+function cbAct(k){var c=S.cb,m=S.me,e=c.e,cr=CC.indexOf(m.job)>=0?3:0,d=0,t='';
+ if((k===1||k===2||k===3)&&m.en<15){c.l.push('Energia insuficiente.');draw();return;}
+ if(k===0){if(rnd()<.9){d=ri(6,12)+lvl(0)*3+2*nt('forca')+cr;t='Você acerta '+d+'.';}else t='Você erra o golpe.';}
+ else if(k===1){m.en-=15;d=ri(12,20)+lvl(0)*4+cr;t='Sua técnica de Ki causa '+d+'.';}
+ else if(k===2){m.en-=15;d=ri(10,22)+lvl(1)*4+cr;t='Sua magia causa '+d+'.';}
+ else if(k===3){m.en-=15;var hh=ri(10,20)+lvl(2)*2;m.h=Math.min(100,m.h+hh);t='Você se cura em '+hh+'.';}
+ else if(k===4){c.d=1;m.en=Math.min(100,m.en+5);t='Você se defende.';}
+ else{if(rnd()<.45+(nt('percepcao')?.2:0)){var ls=Math.min(m.m,ri(0,10));m.m-=ls;lg('Fugiu de '+e.n+(ls?' e perdeu '+ls+' no caminho':'')+'.');cbEnd();return;}t='Não conseguiu fugir.';}
+ e.hp-=d;
+ if(e.hp<=0){var rw=Math.round(c.rw*(cr&&c.ctx==='hunt'?1.5:1));m.m+=rw;if(cr)m.sk++;lg('Derrotou '+e.n+' e ganhou '+rw+'.');cbEnd();return;}
+ var ph=e.hit-.06*Math.min(nt('percepcao'),4)-(c.d?.2:0),u='';
+ if(rnd()<ph){var x=ri(e.a[0],e.a[1]);if(c.d)x=Math.round(x/2);m.h-=x;u=e.n+' acerta '+x+'.';}else u=e.n+' erra.';
+ c.d=0;c.l.push(t+' '+u);
+ if(m.h<=0){m.h=8;m.m=Math.floor(m.m/2);lg('Foi derrotado por '+e.n+', roubado e deixado ferido.');cbEnd();return;}
+ cm();save();draw();}
+function ob(l,f){return{l:l,f:f};}
+function lm(n){S.me.m=Math.max(0,S.me.m-n);}
+var TI=['Plebeu','Cavaleiro','Barão','Conde','Duque'],OF=['Sem cargo','Conselheiro da Vila','Magistrado','Governador da Vila','Chanceler do Reino'],TT=['','Sir ','Barão ','Conde ','Duque '];
+function af(r){return r<=-30?'Inimigo':r<-10?'Hostil':r<10?'Neutro':r<30?'Conhecido':r<55?'Amigo':r<80?'Próximo':'Íntimo';}
+function fa(n){S.me.fm=Math.max(0,(S.me.fm||0)+n);}
+function lo(){return byId(S.lord);}
+function gn(a,b,t){var g=ri(a,b);S.me.m=Math.max(0,S.me.m+g);lg(t+' ('+(g>=0?'+':'')+g+').');}
+function EV(x,d,o){return function(){return{x:x,d:d,o:o};};}
+JOBS['Guarda Real']=18;JOBS['Mercenário']=16;JOBS['Mestre de Armas']=15;JOBS['Mago da Corte']=20;JOBS['Mercador da Guilda']=17;JOBS['Curandeiro da Corte']=18;
+CC.push('Guarda Real','Mercenário','Mestre de Armas','Mago da Corte');
+var RK=['Aprendiz','Profissional','Veterano','Mestre'];
+var ORD={work:'trabalhar nos negócios',guard:'proteger você',hunt:'caçar criaturas',spy:'colher informações',charm:'fazer contatos',trade:'negociar em caravanas'};
+var OPP={'Guarda':[['Guarda Real','Convite para a Guarda Real da corte',10],['Mercenário','Proposta de uma companhia mercenária',0]],'Artista Marcial':[['Mestre de Armas','Convite para instruir a nobreza',10],['Mercenário','Proposta de uma companhia mercenária',0]],'Mago':[['Mago da Corte','Convite para servir como mago da corte',10]],'Comerciante':[['Mercador da Guilda','Convite para a guilda dos mercadores',5]],'Curandeiro':[['Curandeiro da Corte','Convite para curar a nobreza',10]]};
+function oppEv(){var m=S.me,rk=m.rk||0,op=(OPP[m.job]||[]).filter(function(x){return(m.fm||0)>=x[2];});
+ if(rk>=2&&op.length)return{x:'Oportunidade de carreira',d:'Seu desempenho como '+m.job+' chamou atenção.',o:op.map(function(x){return ob(x[1],function(){var old=m.job;m.job=x[0];m.rk=1;m.pay=Math.round(JOBS[x[0]]*(1+m.sk/200));m.emp=null;fa(3);if(x[0]==='Guarda Real'&&(m.ti||0)<1)m.ti=1;lg('Mudou de carreira: de '+old+' para '+x[0]+'.');});}).concat([ob('Recusar',function(){lg('Recusou a oportunidade de carreira.');})])};
+ if(rk<3&&m.job!=='Desempregado'&&m.sk>=[10,30,60][rk])return{x:'Reconhecimento no trabalho',d:'Seu chefe quer promover você.',o:[ob('Aceitar a promoção',function(){m.rk=rk+1;m.pay=Math.round(m.pay*1.35);fa(2);lg('Foi promovido a '+RK[m.rk]+' ('+m.pay+' por semana).');}),ob('Recusar',function(){lg('Recusou a promoção.');})]};
+ return null;}
+function stf(){var m=S.me;m.st=(m.st||[]).filter(function(s){var p=byId(s.id);return p&&!p.dead;});
+ m.st.slice().forEach(function(s){var p=byId(s.id);if(m.m<s.w){m.st=m.st.filter(function(x){return x!==s;});p.hb=0;lg(p.n+' pediu demissão por salário atrasado.');return;}m.m-=s.w;var o=s.o;
+  if(o==='work'&&m.biz.length)m.m+=ri(3,8)+Math.round((JOBS[p.job]||4)/3);
+  else if(o==='hunt'&&rnd()<.25){var g2=ri(10,30);m.m+=g2;lg(p.n+' caçou criaturas e trouxe '+g2+'.');}
+  else if(o==='spy'&&rnd()<.2){var q=npcR();if(q&&!q.kn){q.kn=1;lg(p.n+' descobriu detalhes sobre '+q.n+'.');}}
+  else if(o==='charm'){for(var i=0;i<2;i++){var r=npcR();if(r)r.rel=Math.min(100,r.rel+2);}if(rnd()<.08){var c=npcR();if(c&&m.ct.indexOf(c.id)<0){m.ct.push(c.id);lg(p.n+' fechou um contato comercial com '+c.n+'.');}}}
+  else if(o==='trade'){if(rnd()<.35){var g3=ri(15,40);m.m+=g3;lg(p.n+' voltou da caravana com '+g3+'.');}else if(rnd()<.08)lg(p.n+' perdeu a carga numa emboscada.');}
+  else if(o==='guard')m.h=Math.min(100,m.h+2);});
+ rule();pimp();if(m.rc>0){m.m+=12+m.biz.length*4;m.rc--;}if(m.gd)m.m+=m.gd.lv*6+m.st.length*2;
+ if(['Guarda Real','Mago da Corte','Curandeiro da Corte','Mestre de Armas'].indexOf(m.job)>=0&&S.week%4===0)fa(1);}
+var ACTS=[{v:'work',c:'Trabalho',n:'Trabalhar',d:'Ganha o salário do seu ofício e melhora a habilidade.'},{v:'apply',c:'Trabalho',n:'Candidatar-se a uma vaga',d:'Escolha uma vaga na lista de vagas.'},{v:'promote',c:'Trabalho',n:'Pedir promoção',d:'Sobe na carreira e aumenta o salário.'},{v:'contract',c:'Trabalho',n:'Aceitar contrato de mercenário',d:'Combate bem pago. Só para mercenários.'},
+{v:'study',c:'Treino',n:'Estudar',d:'Aumenta o conhecimento.'},{v:'rest',c:'Treino',n:'Descansar',d:'Recupera energia e saúde.'},{v:'train',c:'Treino',n:'Treinar uma energia',d:'Escolha a energia abaixo.'},{v:'skill',c:'Treino',n:'Usar uma habilidade',d:'Escolha a habilidade abaixo.'},
+{v:'open',c:'Negócios',n:'Abrir um negócio',d:'Escolha o tipo de negócio abaixo.'},{v:'manage',c:'Negócios',n:'Gerir os negócios',d:'Lucro maior nesta semana.'},{v:'ad',c:'Negócios',n:'Fazer propaganda',d:'Custa 15. +30% de lucro por 8 semanas.'},{v:'expand',c:'Negócios',n:'Expandir um negócio',d:'Aumenta lucro e custos.'},{v:'sell',c:'Negócios',n:'Vender o último negócio',d:'Recebe parte do valor.'},
+{v:'hire',c:'Equipe',n:'Contratar a pessoa selecionada',d:'Escolha alguém na lista da cidade.'},{v:'order',c:'Equipe',n:'Dar uma ordem a um empregado',d:'A ordem vale toda semana até ser trocada.'},{v:'fire',c:'Equipe',n:'Dispensar um empregado',d:'Escolha quem abaixo.'},{v:'guild',c:'Equipe',n:'Fundar uma guilda',d:'Custa 150 e exige fama 20.'},{v:'guildup',c:'Equipe',n:'Ampliar a guilda',d:'Mais renda e mais vagas na equipe.'},
+{v:'soc',c:'Pessoas',n:'Socializar',d:'Aumenta o afeto da pessoa selecionada.'},{v:'help',c:'Pessoas',n:'Pedir ajuda',d:'Pode render dinheiro se o afeto for alto.'},{v:'contact',c:'Pessoas',n:'Propor parceria comercial',d:'Contatos ajudam em vagas e negócios.'},{v:'marry',c:'Pessoas',n:'Pedir em casamento',d:'Exige afeto 50+ e pessoa solteira.'},
+{v:'fight',c:'Aventura',n:'Buscar combate',d:'Combate por turnos com recompensa.'},{v:'explore',c:'Aventura',n:'Explorar a mata',d:'Caçar, capturar ou domesticar criaturas.'},
+{v:'charity',c:'Prestígio',n:'Fazer caridade',d:'Custa 10, ganha fama e afeto.'},{v:'title',c:'Prestígio',n:'Pleitear título de nobreza',d:'Cavaleiro, Barão e Conde.'},{v:'office',c:'Prestígio',n:'Disputar cargo político',d:'Conselheiro, Magistrado e Governador.'}];
+var CT=['Trabalho','Negócios','Equipe','Pessoas','Treino','Aventura','Prestígio'],CAT='Trabalho';
+function initActs(){$('act').innerHTML=ACTS.map(function(a){return'<option value="'+a.v+'">'+a.n+'</option>';}).join('');}
+function selAct(v){$('act').value=v;CAT=ACTS.find(function(a){return a.v===v;}).c;msg('');renderActs();}
+function setCat(c){CAT=c;renderActs();}
+function renderActs(){var cur=$('act').value,m=S.me,sp=S.sel?byId(S.sel):null;
+ $('cats').innerHTML=CT.map(function(c){return'<button class="btn alt'+(c===CAT?' on':'')+'" data-c="'+c+'" onclick="setCat(this.dataset.c)">'+c+'</button>';}).join('');
+ $('acts').innerHTML=ACTS.filter(function(a){return a.c===CAT;}).map(function(a){return'<button class="np'+(a.v===cur?' sel':'')+'" data-v="'+a.v+'" onclick="selAct(this.dataset.v)"><div>'+a.n+'<small>'+a.d+'</small></div></button>';}).join('');
+ var h='';if(['soc','help','contact','marry','hire'].indexOf(cur)>=0)h=sp?'Pessoa selecionada: '+sp.n+' ('+af(sp.rel)+').':'Selecione alguém na lista da cidade.';else if(cur==='apply'){var o=S.ops.find(function(x){return x.id===S.selJ;});h=o?'Vaga selecionada: '+o.job+' ('+chance(o)+'% de chance).':'Selecione uma vaga na lista de vagas.';}
+ $('hint').textContent=h;
+ var sh=function(id,on){$(id).style.display=on?'block':'none';};
+ sh('bz',cur==='open');sh('en',cur==='train'||cur==='tech');sh('pa',cur==='master'||cur==='path');sh('gd',cur==='buyg'||cur==='sellg');sh('dc',cur==='decree');sh('ks',cur==='skill');sh('hr',cur==='order'||cur==='fire');sh('or',cur==='order');
+ var hh=(m.st||[]).map(function(s){var p=byId(s.id);return p?'<option value="'+s.id+'">'+p.n+' ('+ORD[s.o]+')</option>':'';}).join('')||'<option value="">(sem equipe)</option>';
+ if($('hr').dataset.h!==hh){$('hr').innerHTML=hh;$('hr').dataset.h=hh;}}
+function lordChk(){if(S.lord==='me')return;var l=byId(S.lord);if(l&&!l.dead)return;var a=S.npcs.filter(function(p){return!p.dead&&p.age>=25;}).sort(function(x,y){return y.w-x.w;});if(!a.length)return;a[0].nb=2;a[0].w+=150;S.lord=a[0].id;lg(a[0].n+' passou a governar Aldeburgo como Barão.');if(a[1]&&!a[1].nb){a[1].nb=1;a[1].w+=80;}}
+var CR=[['Lobo-lunar',45,7,12,35],['Cervo de cristal',30,4,8,45],['Raposa-fogo',35,6,10,40],['Coruja arcana',25,3,7,50]];
+function wild(){var c=pk(CR);return{x:c[0]+' à vista',d:'Você encontra um(a) '+c[0]+' nas trilhas da mata.',o:[ob('Caçar',function(){foe('wild',c);}),ob('Tentar capturar',function(){var ch=30+(nt('animais')?25:0)+(nt('percepcao')?10:0)+lvl(3)*5;if(rnd()*100<ch){S.me.m+=c[4];lg('Capturou '+c[0]+' e vendeu a um colecionador por '+c[4]+'.');}else{S.me.h-=8;lg(c[0]+' escapou e feriu você.');}}),ob('Tentar domesticar',function(){var pt=S.me.pets=S.me.pets||[],ch=15+(nt('animais')?35:0)+lvl(3)*5+lvl(2)*3;if(rnd()*100<ch&&pt.length<3){pt.push(c[0]);lg(c[0]+' passou a acompanhar você.');}else lg(c[0]+' fugiu. Domesticar exige paciência e afinidade.');}),ob('Observar de longe',function(){S.me.k+=1;lg('Observou '+c[0]+' e anotou seus hábitos.');})]};}
+function jpool(){var m=S.me,a=(JEV[m.job]||[]).concat(JX[m.job]||[]);if(m.biz.length)a=a.concat(JEV['Comerciante'],JX['_biz']);if((m.of||0)>0||(m.ti||0)>0)a=a.concat(JX['_pol']);if(S.lord==='me')a=a.concat(JX['_rei']);return a;}
+var JX={
+'Agricultor':[EV('Praga na lavoura','Insetos atacam a plantação.',[ob('Comprar remédio (10)',function(){lm(10);gn(15,30,'Salvou a colheita');}),ob('Esperar a sorte',function(){if(rnd()<.4)gn(10,25,'A praga passou sozinha');else gn(-10,-5,'Perdeu parte da colheita');})])],
+'Sacerdote':[EV('Dilema de fé','O povo e o templo querem coisas opostas.',[ob('Apoiar o povo',function(){for(var i=0;i<2;i++){var p=npcR();if(p)p.rel=Math.min(100,p.rel+6);}lm(5);fa(1);lg('Apoiou o povo contra o templo.');}),ob('Apoiar o templo',function(){gn(12,20,'O templo recompensou sua lealdade');})])],
+'Estudioso':[EV('Manuscrito antigo','Você encontra um manuscrito em língua desconhecida.',[ob('Estudar a fundo',function(){S.me.en-=10;S.me.k+=5;lg('Aprendeu muito com o manuscrito.');}),ob('Vender a um colecionador',function(){gn(10,25,'Vendeu o manuscrito');})])],
+'Artesão':[EV('Cliente exigente','Um nobre quer uma peça perfeita.',[ob('Refazer até ficar perfeita',function(){S.me.en-=10;gn(15,30,'O cliente pagou bem');}),ob('Entregar como está',function(){gn(-5,12,'O cliente reagiu à entrega');})])],
+'Guarda':[EV('Contrabandista oferece suborno','Ele quer passar com a carga sem inspeção.',[ob('Aceitar',function(){gn(25,35,'Aceitou suborno');S.me.sk=Math.max(0,S.me.sk-2);}),ob('Prender o contrabandista',function(){foe('duel');})])],
+'Mago':[EV('Biblioteca arcana','Uma biblioteca guarda um grimório antigo.',[ob('Estudar o grimório',function(){S.me.en-=10;S.me.k+=4;S.me.tr[1]+=3;lg('Avançou no estudo da Mana.');}),ob('Copiar e vender',function(){gn(10,25,'Vendeu cópias de feitiços');})])],
+'Artista Marcial':[EV('Torneio da vila','Um torneio paga prêmio ao vencedor.',[ob('Participar',function(){foe('duel');}),ob('Assistir e aprender',function(){S.me.tr[0]+=2;lg('Aprendeu observando os lutadores.');})])],
+'Curandeiro':[EV('Erva rara','Um viajante vende uma erva medicinal rara.',[ob('Comprar (15)',function(){lm(15);gn(25,45,'Preparou remédios valiosos');}),ob('Recusar',function(){lg('Recusou a erva.');})])],
+'_biz':[EV('Fiscal exige taxa','Um fiscal ameaça fechar seu negócio.',[ob('Pagar a taxa (15)',function(){lm(15);lg('Pagou a taxa.');}),ob('Subornar (30)',function(){if(S.me.m>=30){lm(30);lg('Subornou o fiscal.');}else{lm(15);lg('Sem dinheiro para o suborno, pagou a taxa.');}}),ob('Recusar',function(){lm(30);lg('O negócio foi multado em 30.');})]),
+EV('Concorrente abre ao lado','Um rival abriu um negócio parecido.',[ob('Fazer promoção (10)',function(){lm(10);S.me.ad=Math.max(S.me.ad||0,4);lg('Fez uma promoção.');}),ob('Ignorar',function(){S.me.ad=0;lg('Perdeu clientes para o concorrente.');})]),
+EV('Roubo no depósito','Ladrões invadiram o depósito.',[ob('Perseguir os ladrões',function(){foe('amb');}),ob('Contratar vigia (20)',function(){lm(20);lg('Contratou um vigia.');})])],
+'_pol':[EV('Disputa de impostos','O senhor da vila quer aumentar os impostos.',[ob('Apoiar o aumento',function(){gn(20,40,'Recebeu parte da arrecadação');for(var i=0;i<3;i++){var p=npcR();if(p)p.rel-=4;}if(lo())lo().rel+=6;}),ob('Defender o povo',function(){fa(3);if(lo())lo().rel-=6;lg('Defendeu o povo contra o aumento.');})]),
+EV('Revolta camponesa','Camponeses cercam a prefeitura.',[ob('Reprimir pela força',function(){foe('duel');}),ob('Negociar (15)',function(){lm(15);fa(4);lg('Negociou e evitou a revolta.');})]),
+EV('Banquete do senhor','O senhor da vila convida os notáveis.',[ob('Comparecer (10)',function(){lm(10);fa(2);if(lo())lo().rel=Math.min(100,lo().rel+8);lg('Compareceu ao banquete.');}),ob('Recusar',function(){if(lo())lo().rel-=6;lg('Recusou o convite do senhor.');})]),
+EV('Conspiração na corte','Nobres planejam derrubar o senhor da vila.',[ob('Participar',function(){if(rnd()<.5)gn(40,70,'A conspiração rendeu favores');else{fa(-5);if(lo())lo().rel-=20;lg('A conspiração foi descoberta.');}}),ob('Denunciar',function(){fa(4);if(lo())lo().rel=Math.min(100,lo().rel+10);lg('Denunciou a conspiração.');})])]
+};
+var JEV={
+'Comerciante':[
+function(){return{x:'Bandidos na estrada',d:'Homens armados bloqueiam sua carroça de mercadorias.',o:[ob('Lutar',function(){foe('amb');}),ob('Pagar o pedágio (15)',function(){lm(15);lg('Pagou pedágio a bandidos.');}),ob('Tentar fugir',function(){if(rnd()<.5+(nt('percepcao')?.2:0))lg('Escapou dos bandidos.');else{lm(25);S.me.h-=8;lg('Os bandidos levaram parte da carga.');}})]};},
+function(){return{x:'Comprador estrangeiro',d:'Um mercador de longe quer um lote grande, mas o preço é incerto.',o:[ob('Fechar o negócio',function(){var g=nt('persuasao')?ri(20,35):ri(-10,25);S.me.m=Math.max(0,S.me.m+g);lg('O negócio rendeu '+g+'.');}),ob('Recusar',function(){lg('Recusou o lote.');})]};}],
+'Guarda':[function(){return{x:'Briga na taverna',d:'Um valentão está quebrando a taverna.',o:[ob('Intervir',function(){foe('duel');}),ob('Chamar reforços',function(){S.me.m+=5;lg('Os reforços prenderam o valentão.');})]};}],
+'Mago':[function(){return{x:'Experimento instável',d:'Um feitiço seu começa a oscilar.',o:[ob('Tentar controlar',function(){if(lvl(1)>=2||rnd()<.4){var g=ri(15,30);S.me.m+=g;S.me.k+=3;lg('Controlou o feitiço e vendeu a técnica por '+g+'.');}else{S.me.h-=15;lg('O feitiço explodiu e feriu você.');}}),ob('Abandonar',function(){lg('Abandonou o experimento.');})]};}],
+'Artista Marcial':[function(){return{x:'Desafio no pátio',d:'Um lutador local desafia você diante de todos.',o:[ob('Aceitar o duelo',function(){foe('duel');}),ob('Recusar',function(){lg('Recusou o desafio e perdeu prestígio.');})]};}],
+'Curandeiro':[function(){return{x:'Surto de febre',d:'Muitos doentes procuram sua ajuda.',o:[ob('Tratar todos',function(){var g=ri(10,25);S.me.m+=g;S.me.en-=15;for(var i=0;i<3;i++){var p=npcR();if(p)p.rel=Math.min(100,p.rel+5);}lg('Tratou os doentes e ganhou '+g+'.');}),ob('Cobrar adiantado',function(){S.me.m+=20;lg('Cobrou adiantado e ouviu críticas.');})]};}],
+'Avaliador':[function(){return{x:'Peça suspeita',d:'Um cliente traz uma joia que parece boa demais.',o:[ob('Examinar a fundo',function(){var g=ri(15,35);S.me.m+=g;S.me.en-=10;lg('Descobriu uma falsificação e ganhou '+g+'.');}),ob('Aceitar o laudo do dono',function(){if(rnd()<.5){S.me.m+=10;lg('A peça era autêntica.');}else{lm(15);lg('Era uma fraude e você pagou o prejuízo.');}})]};}],
+'Mensageiro':[function(){return{x:'Entrega perigosa',d:'Pagam bem para levar uma carga por uma estrada ruim.',o:[ob('Aceitar',function(){if(rnd()<.5){var g=ri(25,40);S.me.m+=g;lg('Entregou a carga e ganhou '+g+'.');}else foe('amb');}),ob('Recusar',function(){lg('Recusou a entrega.');})]};}],
+'Pescador':[function(){return{x:'Tempestade no mar',d:'O céu escurece, mas o cardume está perto.',o:[ob('Arriscar',function(){if(rnd()<.6){var g=ri(20,40);S.me.m+=g;lg('Voltou com um grande carregamento: '+g+'.');}else{S.me.h-=15;lg('A tempestade feriu você.');}}),ob('Ficar em terra',function(){lg('Esperou a tempestade passar.');})]};}],
+'Ferreiro':[function(){return{x:'Encomenda urgente',d:'Um capitão quer armas para amanhã.',o:[ob('Aceitar',function(){S.me.en-=15;var g=ri(20,35);S.me.m+=g;lg('Forjou a encomenda e ganhou '+g+'.');}),ob('Recusar',function(){lg('Recusou a encomenda.');})]};}]
+};
+function ht(t){for(var i=0;i<4;i++)for(var j=0;j<lvl(i);j++)if(SK[i][j][2]===t)return 1;return 0;}
+function chance(op){var m=S.me,e=op.emp?byId(op.emp):null,c=20-Math.round((ec().un||0)*30)+[0,10,25][m.cl]+Math.round(m.k/2)+(JT[op.job]&&ht(JT[op.job])?20:0)+(e&&!e.dead?Math.round(e.rel/4)+(m.ct.indexOf(e.id)>=0?20:0):0);return Math.max(5,Math.min(90,c));}
+var CL=["Pobre","Média","Rica"],CM=[12,45,160],RG=["Culto do Rio","Ordem das Estrelas","Caminho Silencioso"];
+var S1=["Al","Bre","Cor","Da","El","Fen","Gar","Hel","Ira","Jor","Kel","Lun","Mar","Nor","Ori","Pel","Ren","Sil","Tor","Ul","Vel"],S2=["an","dric","eth","la","mir","nor","ra","sa","th","vin","ya","ric"];
+var S=null,pend=null,timer=null,nwc=0;
+function rnd(){S.r=(S.r+0x6D2B79F5)|0;var t=Math.imul(S.r^S.r>>>15,1|S.r);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
+function ri(a,b){return a+Math.floor(rnd()*(b-a+1));}
+function pk(a){return a[Math.floor(rnd()*a.length)];}
+function $(i){return document.getElementById(i);}
+function msg(t){$("msg").textContent=t;}
+function lg(t){S.log.unshift("Sem "+(S.week+1)+": "+t);if(S.log.length>60)S.log.pop();}
+function byId(id){return S.npcs.find(function(p){return p.id===id;});}
+function lv(v){return v>=60?"alta":v>=35?"média":"baixa";}
+function pr(){return Math.max(1,Math.round(2*PX('f')/100))+S.shock;}
+function mk(age){return{id:S.nid++,n:pk(S1)+pk(S2),sp:pk(SPN.concat(["Humano","Humano"])),age:age,job:age<16?"Criança":pk(JN),w:ri(5,80),t:[ri(10,90),ri(10,90),ri(10,90),ri(10,90)],rel:ri(-10,10),sx:null,hue:ri(0,359),dead:0,fr:[],ri:[],mem:[],bz:0};}
+function newGame(){
+  S={v:2,r:(Math.random()*4294967296)|0,week:0,nid:1,npcs:[],log:[],shock:0,shT:0,sel:null,over:null,ops:[],selJ:null,bp:0,mg:0};
+  for(var i=0;i<24;i++)S.npcs.push(mk(ri(0,60)));
+  for(var q=0;q<4;q++)newOp();
+  lordChk();
+  var sp=pk(SPN),cl=ri(0,2);
+  S.me={n:pk(S1)+pk(S2),sp:sp,age:16,cl:cl,rg:pk(RG),job:"Desempregado",pay:4,fm:0,ti:0,of:0,rk:0,st:[],gd:null,pets:[],ad:0,ct:[],biz:[],m:CM[cl],h:100,en:80,k:ri(0,10),sk:ri(0,10),ap:SP[sp].e.map(function(x){return Math.round(x*ri(10,60));}),tr:[0,0,0,0],rev:[0,0,0,0],hue:ri(0,359)};
+  lg("Você nasceu em Aldeburgo: "+sp+", família "+CL[cl].toLowerCase()+", seguidor do "+S.me.rg+".");
+}
+function cm(){var m=S.me;m.h=Math.min(100,m.h);m.en=Math.max(0,Math.min(100,m.en));if(m.m<0)m.m=0;}
+function step(){
+  if(pend||S.over||S.cb)return;
+  var m=S.me,a=$("act").value,i=+$("en").value,n=S.sel?byId(S.sel):null;
+  if((a==="soc"||a==="help"||a==="contact"||a==="marry"||a==="hire"||a==="kill"||a==="gift"||a==="duel")&&(!n||n.dead)){msg("Selecione uma pessoa viva na lista da cidade.");return;}
+  var op=a==="apply"?S.ops.find(function(x){return x.id===S.selJ;}):null,bt=$("bz").value,B=BZ[bt];
+  if(a==="apply"&&!op){msg("Selecione uma vaga na lista.");return;}
+  if(a==="apply"&&!qok(op.job)){msg("Esta vaga exige: "+qtx(op.job)+".");return;}
+  if(a==="open"){if(B.q&&!ht(B.q)){msg("Este negócio exige habilidade de "+TG[B.q]+".");return;}if(m.m<B.c){msg("Capital insuficiente: custa "+B.c+".");return;}if(m.biz.length>=3){msg("Limite de 3 negócios.");return;}}
+  if((a==="manage"||a==="ad"||a==="expand"||a==="sell"||a==="product"||a==="royalc")&&!m.biz.length){msg("Você ainda não tem negócios.");return;}
+  if(a==="skill"&&!$("ks").value){msg("Você ainda não tem habilidades. Treine uma energia.");return;}
+  if((a==="order"||a==="fire")&&!(m.st||[]).length){msg("Você ainda não tem equipe.");return;}
+  msg("");
+  if(a==="work"){var g=Math.round(m.pay*(1+m.sk/100)*(JT[m.job]&&ht(JT[m.job])?1.1:1)*jx(m.job)*(m.en<10?.5:1));m.m+=g;m.en-=15;m.sk++;lg((m.job==="Desempregado"?"Fez bicos":"Trabalhou como "+m.job)+" e ganhou "+g+".");}
+  else if(a==="study"){m.k+=3;m.en-=10;m.m=Math.max(0,m.m-1);lg("Passou a semana estudando.");}
+  else if(a==="rest"){m.en+=30;m.h+=5;lg("Descansou.");}
+  else if(a==="soc"){var d=ri(3,8);n.rel=Math.min(100,n.rel+d);m.en-=8;lg("Passou tempo com "+n.n+" (+"+d+" de relação).");}
+  else if(a==="help"){if(n.rel>=20&&n.w>20){var g2=ri(5,15);n.w-=g2;m.m+=g2;n.rel-=3;lg(n.n+" ajudou você com "+g2+".");rm(n,'Eu ajudei você com dinheiro.');}else{n.rel-=5;lg(n.n+" recusou ajudar.");rm(n,'Eu recusei ajudar você.');}}
+  else if(a==="buyg"){var gg=$('gd').value;if(m.m<50){msg('Comprar um lote custa 50.');return;}m.m-=50;m.gs=m.gs||{};m.gs[gg]=(m.gs[gg]||0)+50*100/PX(gg);lg('Comprou um lote de '+GN[gg].toLowerCase()+' (índice de preço '+PX(gg)+').');}
+  else if(a==="sellg"){var g4=$('gd').value;m.gs=m.gs||{};var q4=m.gs[g4]||0;if(q4<=0){msg('Você não tem estoque deste item.');return;}var rv=Math.round(q4*PX(g4)/100);m.m+=rv;m.gs[g4]=0;lg('Vendeu o estoque de '+GN[g4].toLowerCase()+' por '+rv+' (índice de preço '+PX(g4)+').');}
+  else if(a==="kill"){if(n.sx==="me"||n.pf){msg('Você não pode atacar a própria família.');return;}var ck=35+(nt('percepcao')?15:0)+(CC.indexOf(m.job)>=0?10:0)+(m.st||[]).filter(function(s){return s.o==='spy';}).length*5-(n.nb||0)*10;m.en-=15;if(rnd()*100<Math.min(80,ck)){n.dead=1;if(n.sx&&n.sx!=='me'){var sv2=byId(n.sx);if(sv2)sv2.sx=null;}S.npcs.forEach(function(p){if(!p.dead&&(n.fr||[]).indexOf(p.id)>=0)p.rel-=15;});if(S.lord===n.id)S.lord=0;lg('Alguém morreu em circunstâncias suspeitas: '+n.n+'.');if(rnd()<.3){fa(-8);lg('Há suspeitas contra você.');}}else{fa(-8);lm(50);m.h-=20;n.rel=-50;lg('Foi pego tentando matar '+n.n+'.');}}
+  else if(a==="child"){var sp2=m.sx&&m.sx!=='me'?byId(m.sx):null;if(!sp2||sp2.dead){msg('Você precisa de um cônjuge vivo.');return;}m.en-=10;if(rnd()<.45&&S.npcs.length<70){var kd=mk(0);kd.job='Criança';kd.sp=m.sp;kd.pf=1;kd.rel=70;S.npcs.push(kd);lg('Você e '+sp2.n+' tiveram um filho: '+kd.n+'.');}else lg('Ainda não houve gravidez.');}
+  else if(a==="gift"){if(m.m<10){msg('Um presente custa 10.');return;}m.m-=10;n.rel=Math.min(100,n.rel+8);rm(n,'Você me deu um presente.');lg('Presenteou '+n.n+' (+8 de afeto).');}
+  else if(a==="duel"){if(m.en<20||m.h<30){msg('Você precisa de ao menos 20 de energia e 30 de saúde.');return;}if(n.pf||n.sx==="me"){msg('Não é possível duelar com a família.');return;}foeN(n);lg('Desafiou '+n.n+' para um duelo.');}
+  else if(a==="product"){var pq=m.pq||0;if(pq>=3){msg('Seus produtos já estão no nível máximo.');return;}var pc2=40*(pq+1);if(m.m<pc2){msg('Desenvolver um novo produto custa '+pc2+'.');return;}m.m-=pc2;m.en-=10;m.pq=pq+1;fa(1);lg('Lançou um novo produto (+15% de lucro nos negócios).');}
+  else if(a==="royalc"){if((m.ti||0)<1){msg('Exige título de nobreza.');return;}if(m.rc>0){msg('Você já tem um contrato com a nobreza.');return;}m.rc=12;lg('Fechou um contrato de fornecimento para a nobreza (12 semanas).');}
+  else if(a==="master"){var P1=PA.find(function(x){return x.id===$('pa').value;});if(m.m<25||m.en<15){msg('Uma lição custa 25 de dinheiro e 15 de energia.');return;}m.ms=m.ms||{};m.m-=25;m.en-=15;m.ms[P1.id]=(m.ms[P1.id]||0)+1;m.tr[P1.e]+=4;lg('Estudou com '+MST(P1)+': lição '+m.ms[P1.id]+' do caminho '+P1.n+'.');}
+  else if(a==="path"){var P=PA.find(function(x){return x.id===$('pa').value;});m.pa=m.pa||[null,null,null,null];m.ms=m.ms||{};if(m.pa[P.e]){msg('Você já segue um caminho de '+EN[P.e]+'.');return;}if(lvl(P.e)<3){msg('Exige '+EN[P.e]+' nível 3.');return;}if(P.rq&&lvl(P.rq[0])<P.rq[1]){msg('Exige '+EN[P.rq[0]]+' nível '+P.rq[1]+'.');return;}if((m.ms[P.id]||0)<2&&lvl(P.e)<5){msg('Estude ao menos 2 lições com '+MST(P)+' (ou chegue ao nível 5).');return;}m.pa[P.e]=P.id;fa(3);lg('Passou a seguir o caminho: '+P.n+'.');}
+  else if(a==="tech"){if(m.k<10||m.en<20){msg('Desenvolver uma técnica exige conhecimento 10 e 20 de energia.');return;}if((m.tq||[]).length>=4){msg('Você já criou 4 técnicas.');return;}m.en-=20;pend=techQ(i,0,[]);lg('Passou a semana desenvolvendo uma técnica de '+EN[i]+'.');}
+  else if(a==="decree"){if(!(S.lord==="me"||(m.of||0)>=3)){msg('Decretos exigem ser governante ou Governador da Vila.');return;}var dd=S.dc=S.dc||{tx:1},v=$('dc').value;
+   if(v==='taxup'){if(dd.tx>=2){msg('Impostos já estão no máximo.');return;}dd.tx++;lg('Decretou aumento de impostos.');}
+   else if(v==='taxdn'){if(dd.tx<=0){msg('Impostos já estão no mínimo.');return;}dd.tx--;lg('Decretou redução de impostos.');}
+   else if(v==='wall'){if(dd.mur||m.m<200){msg(dd.mur?'A muralha já existe.':'Custa 200.');return;}m.m-=200;dd.mur=1;fa(4);lg('Mandou construir uma muralha.');}
+   else if(v==='acad'){if(dd.ac||m.m<250){msg(dd.ac?'A academia já existe.':'Custa 250.');return;}m.m-=250;dd.ac=1;fa(4);lg('Fundou uma academia real.');}
+   else if(v==='war'){if(m.m<100){msg('Custa 100.');return;}m.m-=100;var ws=30+(m.st||[]).length*6+(m.gd?m.gd.lv*10:0)+Math.round((m.fm||0)/2),we=60+ri(0,40)-(dd.mur?15:0);if(ws+ri(0,30)>we){var lt=ri(100,250);m.m+=lt;fa(10);dd.wr=(dd.wr||0)+1;lg('Venceu a guerra contra o reino vizinho e obteve '+lt+' em despojos.');}else{fa(-5);lm(80);for(var k2=0;k2<2;k2++){var vp=pk(S.npcs.filter(function(p){return!p.dead&&p.age>=18&&p.age<50&&p.sx!=='me';}));if(vp){vp.dead=1;lg(vp.n+' morreu na guerra.');}}lg('Perdeu a guerra contra o reino vizinho.');}}
+   else if(v==='feast'){if(m.m<80){msg('Custa 80.');return;}m.m-=80;fa(3);S.npcs.forEach(function(p){if(!p.dead)p.rel=Math.min(100,p.rel+5);});lg('Deu um grande festival ao povo.');}}
+  else if(a==="coup"){if(S.lord==="me"){msg('Você já governa Aldeburgo.');return;}var ll=lo();if(!ll){msg('Não há senhor a derrubar.');return;}if((m.of||0)<2&&(m.ti||0)<2){msg('Um golpe exige o cargo de Magistrado ou título de Barão.');return;}if(m.m<100){msg('Subornar apoiadores custa 100.');return;}m.m-=100;m.en-=15;var ps=Math.round((m.fm||0)/2)+(m.st||[]).length*8+(m.gd?m.gd.lv*10:0)+S.npcs.filter(function(p){return!p.dead&&p.rel>=60;}).length*3+(CC.indexOf(m.job)>=0?10:0)+Math.round(m.m/25),ls=40+Math.round(ll.w/10)+(S.dc&&S.dc.mur?15:0);
+   if(rnd()*100<Math.max(5,Math.min(90,50+ps-ls))){ll.rel=-50;if(rnd()<.5){ll.dead=1;lg('O golpe derrubou '+ll.n+', que morreu na disputa.');}else{ll.nb=0;ll.w=Math.round(ll.w/4);lg('O golpe derrubou '+ll.n+', que foi exilado.');}S.lord="me";m.ti=Math.max(m.ti||0,3);fa(15);S.npcs.forEach(function(p){if(!p.dead){if(p.rel>=60)p.rel+=5;else p.rel-=3;}});lg('Você assumiu o governo de Aldeburgo.');}
+   else{fa(-10);m.h=Math.min(m.h,12);m.m=Math.floor(m.m/2);if(rnd()<.25)S.over=['Executado por traição','O golpe fracassou e você foi condenado à morte.'];else lg('O golpe fracassou. Você foi preso, solto e humilhado.');}}
+  else if(a==="promote"){if(m.job==="Desempregado"){msg('Você precisa de um emprego.');return;}var rk=m.rk||0;if(rk>=3){msg('Você já está no topo desta carreira.');return;}var rs=[10,30,60][rk];if(m.sk<rs){msg('Para a promoção é preciso habilidade no ofício '+rs+' (você tem '+m.sk+').');return;}var eb=m.emp?byId(m.emp):null,pc=40+Math.round(m.sk/3)+(eb&&!eb.dead?Math.round(eb.rel/3):0)+(nt('persuasao')?10:0);m.en-=5;if(rnd()*100<Math.min(90,pc)){m.rk=rk+1;m.pay=Math.round(m.pay*1.35);fa(2);lg('Foi promovido a '+RK[m.rk]+' como '+m.job+' (agora '+m.pay+' por semana).');}else lg('A promoção não saiu desta vez.');}
+  else if(a==="contract"){if(m.job!=='Mercenário'){msg('Só mercenários aceitam contratos.');return;}if(m.en<20||m.h<30){msg('Você precisa de ao menos 20 de energia e 30 de saúde.');return;}foe('hunt');S.cb.rw=Math.round(S.cb.rw*1.5);lg('Aceitou um contrato de mercenário.');}
+  else if(a==="hire"){var cap=3+(m.gd?m.gd.lv*2:0)+((m.ti||0)>0?1:0);m.st=m.st||[];if(m.st.length>=cap){msg('Seu limite é de '+cap+' pessoas (guilda e título aumentam o limite).');return;}if(n.age<16||n.hb||(m.sx&&n.id===m.sx)){msg('Essa pessoa não pode ser contratada.');return;}var wx=Math.max(4,Math.round((JOBS[n.job]||5)*.6)+2),hc=35+Math.round(n.rel/2)+(nt('persuasao')?15:0)+(n.w<20?20:0);m.en-=5;if(rnd()*100<Math.min(90,hc)){n.hb=1;m.st.push({id:n.id,o:'work',w:wx});lg(n.n+' foi contratado(a) por '+wx+' por semana.');rm(n,'Trabalho para você.');}else{n.rel-=2;lg(n.n+' recusou a oferta de emprego.');rm(n,'Eu recusei trabalhar para você.');}}
+  else if(a==="fire"){var sid=+$('hr').value;m.st=(m.st||[]).filter(function(s){return s.id!==sid;});var pf2=byId(sid);if(pf2){pf2.hb=0;lg('Dispensou '+pf2.n+'.');}}
+  else if(a==="order"){var s2=(m.st||[]).find(function(s){return s.id===+$('hr').value;});if(s2){s2.o=$('or').value;var pn=byId(s2.id);lg('Ordenou a '+(pn?pn.n:'um empregado')+': '+ORD[s2.o]+'.');}}
+  else if(a==="guild"){if(m.gd){msg('Você já fundou uma guilda.');return;}if((m.fm||0)<20||m.m<150){msg('Fundar uma guilda exige fama 20 e 150 de dinheiro.');return;}m.m-=150;m.gd={n:(CC.indexOf(m.job)>=0?'Companhia ':'Guilda ')+pk(S1)+pk(S2),lv:1};fa(5);lg('Fundou a '+m.gd.n+'.');}
+  else if(a==="guildup"){if(!m.gd){msg('Você não tem guilda.');return;}if(m.gd.lv>=3){msg('A guilda já está no nível máximo.');return;}var gc=150*m.gd.lv;if(m.m<gc){msg('Ampliar a guilda custa '+gc+'.');return;}m.m-=gc;m.gd.lv++;fa(3);lg('A '+m.gd.n+' foi ampliada para o nível '+m.gd.lv+'.');}
+  else if(a==="ad"){if(m.m<15){msg('Propaganda custa 15.');return;}m.m-=15;m.ad=8;lg('Fez propaganda por 8 semanas.');}
+  else if(a==="expand"){var b=m.biz.find(function(x){return(x.lv||1)<3;});if(!b){msg('Todos os negócios já estão no nível máximo.');return;}var ec=Math.round(BZ[b.t].c*(b.lv||1)*.8);if(m.m<ec){msg('Expandir '+b.t+' custa '+ec+'.');return;}m.m-=ec;b.lv=(b.lv||1)+1;fa(2);lg('Expandiu '+b.t+' para o nível '+b.lv+' (custou '+ec+').');}
+  else if(a==="sell"){var b2=m.biz.pop(),sv=Math.round(BZ[b2.t].c*(b2.lv||1)*.6);m.m+=sv;lg('Vendeu '+b2.t+' por '+sv+'.');}
+  else if(a==="explore"){if(m.en<15){msg('Você precisa de 15 de energia.');return;}m.en-=15;S.wl=1;lg('Explorou a mata em busca de criaturas mágicas.');}
+  else if(a==="charity"){if(m.m<10){msg('A caridade custa 10.');return;}m.m-=10;m.en-=8;fa(3);for(var q2=0;q2<3;q2++){var pp=npcR();if(pp)pp.rel=Math.min(100,pp.rel+4);}lg('Fez caridade e ganhou prestígio.');}
+  else if(a==="title"){var nx=(m.ti||0)+1;if(nx>4){msg('Você já está no topo da nobreza.');return;}var rq=[0,25,60,100,160][nx],cs=[0,60,200,500,900][nx],rl=[0,30,50,70,80][nx],ld=lo(),mis=[];if((m.fm||0)<rq)mis.push('fama '+rq);if(m.m<cs)mis.push('dinheiro '+cs);if(S.lord!=='me'&&(!ld||ld.rel<rl))mis.push('afeto '+rl+' com '+(ld?ld.n:'o senhor da vila'));if(mis.length){msg('Para virar '+TI[nx]+' falta: '+mis.join(', ')+'.');return;}m.m-=cs;m.ti=nx;fa(5);lg('Recebeu o título de '+TI[nx]+'.');}
+  else if(a==="office"){var nf=(m.of||0)+1;if(nf>4){msg('Você já ocupa o cargo mais alto.');return;}var fq=[0,15,40,70,110][nf],tq=[0,0,1,2,3][nf];if((m.fm||0)<fq||(m.ti||0)<tq){msg('Para '+OF[nf]+' é preciso fama '+fq+(tq?' e o título de '+TI[tq]:'')+'.');return;}if(m.m<20){msg('A campanha custa 20.');return;}m.m-=20;m.en-=10;var l2=lo(),oc=30+(l2?Math.round(l2.rel/2):0)+(nt('persuasao')?15:0)+Math.min(m.ct.length,5)*3+Math.round((m.fm||0)/4);if(rnd()*100<Math.min(90,oc)){m.of=nf;fa(8);lg('Foi nomeado(a) '+OF[nf]+'.');}else{fa(-1);lg('Perdeu a disputa pelo cargo de '+OF[nf]+'.');}}
+  else if(a==="marry"){if(m.sx&&byId(m.sx)&&!byId(m.sx).dead){msg("Você já é casado(a).");return;}if(m.age<18||n.sx||n.age<18||n.rel<50){msg("É preciso ter 18 anos, relação 50+ e que a pessoa seja solteira e adulta.");return;}m.en-=5;if(rnd()*100<20+n.rel/2+(ht("persuasao")?10:0)){m.sx=n.id;n.sx="me";n.rel=100;m.m+=Math.round(n.w/2);n.w=Math.round(n.w/2);lg("Casou-se com "+n.n+".");rm(n,"Nos casamos.");if((n.nb||0)-1>(m.ti||0)){m.ti=n.nb-1;lg('Você recebeu o título de '+TI[m.ti]+' pelo casamento.');}}else{n.rel-=10;lg(n.n+" recusou o pedido de casamento.");rm(n,"Eu recusei seu pedido de casamento.");}}
+  else if(a==="skill"){useSk($("ks").value);}
+  else if(a==="fight"){if(m.en<20||m.h<30){msg("Você precisa de ao menos 20 de energia e 30 de saúde.");return;}foe("hunt");lg("Saiu em busca de ameaças.");}
+  else if(a==="contact"){var ch=Math.max(5,Math.min(90,25+Math.round(n.rel/2)-8*(n.mem||[]).filter(function(x){return x.indexOf('recusei')>=0;}).length+(ht("persuasao")?20:0)+Math.round(m.k/4)));m.en-=8;if(rnd()*100<ch&&m.ct.indexOf(n.id)<0){m.ct.push(n.id);n.rel=Math.min(100,n.rel+10);lg(n.n+" aceitou uma parceria comercial.");rm(n,'Fechamos uma parceria comercial.');}else{n.rel-=3;lg(n.n+" recusou a parceria.");rm(n,'Eu recusei sua parceria.');}}
+  else if(a==="apply"){m.en-=5;if(rnd()*100<chance(op)){m.job=op.job;m.pay=op.pay;m.sk=0;m.rk=0;m.emp=op.emp;S.ops=S.ops.filter(function(x){return x.id!==op.id;});S.selJ=null;lg("Foi contratado como "+op.job+" por "+op.en+" ("+op.pay+" por semana).");}else lg("Não foi escolhido para a vaga de "+op.job+".");}
+  else if(a==="open"){m.m-=B.c;m.biz.push({t:bt});lg("Abriu uma "+bt+" (custou "+B.c+").");}
+  else if(a==="manage"){m.en-=12;S.mg=1;lg("Dedicou a semana a gerir seus negócios.");}
+  else if(a==="train"){var l0=lvl(i);m.tr[i]+=1+Math.round(m.ap[i]/25);m.en-=20;if(lvl(i)>l0)lg("Nova habilidade: "+SK[i][lvl(i)-1][0]+" ("+EN[i]+").");
+    if(m.tr[i]>=15&&!m.rev[i]){m.rev[i]=1;lg("Treinando "+EN[i]+", você descobriu uma aptidão "+lv(m.ap[i])+".");}else lg("Treinou "+EN[i]+".");}
+  var need=pr()+3+(m.sx?pr():0)+S.npcs.filter(function(p){return p.pf&&!p.dead&&p.age<16;}).length+(m.pets||[]).length;
+  stf();if(m.of)m.m+=[0,15,25,45,80][m.of];var sq=m.sx?byId(m.sx):null;if(sq&&!sq.dead&&JOBS[sq.job])m.m+=Math.round(JOBS[sq.job]/3);
+  if(a==="open"||a==="apply")$("act").value="work";
+  if(m.age<18)m.m+=[2,5,15][m.cl];
+  var bs=0;m.biz.forEach(function(b){var d=BZ[b.t],lv=b.lv||1,p2=Math.round(d.i*lv*(.5+rnd()))+Math.min(m.ct.length,5)-Math.round(d.u*lv*.8);if(S.mg)p2=Math.round(p2*1.5);if(BG[b.t])p2=Math.round(p2*Math.max(.6,Math.min(1.6,PX(BG[b.t])/100)));if(m.ad>0)p2=Math.round(p2*1.3);if(m.job==='Mercador da Guilda')p2=Math.round(p2*1.2);p2=Math.round(p2*(1+.15*(m.pq||0)));bs+=p2;});S.mg=0;if(m.ad>0)m.ad--;S.bp+=bs;m.m+=bs;if(m.biz.length&&S.week%4===3){lg("Seus negócios renderam "+S.bp+" nas últimas 4 semanas.");S.bp=0;}
+  if(m.m>=need){m.m-=need;m.h+=1;}else{m.m=0;m.h-=6;lg("Faltou dinheiro para comida e aluguel.");}
+  m.en+=8;if(m.en<=0)m.h-=5;
+  cm();S.week++;
+  if(S.shT>0){S.shT--;if(!S.shT)S.shock=0;}
+  npcStep();econ();lordChk();kid();if(rnd()<Math.max(.1,.45-(ec().un||0)))newOp();S.ops=S.ops.filter(function(o){return S.week-o.w<10;});
+  if(S.week%52===0){S.npcs.forEach(function(p){if(p.dead)return;p.age++;if(p.job==="Criança"&&p.age>=16)p.job=pk(JN);});m.age++;lg("Você fez "+m.age+" anos.");}
+  if(m.h<=0)S.over=["Você morreu","A saúde chegou a zero. O mundo continua sem você."];
+  else if(m.age>SP[m.sp].max)S.over=["Você morreu de velhice","Uma vida inteira em Aldeburgo chegou ao fim."];
+  if(pend){}else if(S.wl&&!S.over&&!S.cb){S.wl=0;pend=wild();}else if(!S.over&&!S.cb&&rnd()<.12&&(pend=oppEv())){}else if(!S.over&&!S.cb&&rnd()<.3){var jp=jpool(),e=(jp.length&&rnd()<.5?pk(jp):pk(EVS))();if(e)pend=e;}
+  if(S.week%4===0||S.over)save();
+  draw();
+}
+function alive(){return S.npcs.filter(function(p){return!p.dead;}).length;}
+var CP=[[['Soco Concentrado',10,'d',10],['Chute Giratório',14,'d',16],['Postura de Ferro',10,'b',0],['Onda de Impacto',20,'d',24],['Punho do Dragão',30,'d',38]],[['Projétil Arcano',10,'d',12],['Barreira Arcana',12,'b',0],['Raio Gélido',18,'s',16],['Chama Ardente',22,'d',30],['Tempestade Arcana',35,'d',45]],[['Prece de Cura',12,'h',18],['Bênção',10,'u',0],['Olhar Penetrante',12,'e',0],['Selo Espiritual',20,'s',10],['Julgamento',35,'d',40]],[['Mordida Feroz',8,'d',9],['Regeneração',14,'h',22],['Fúria Selvagem',14,'u',0],['Pele de Aço',12,'b',0],['Instinto Predador',28,'d',36]]];
+function cbHtml(){var c=S.cb,e=c.e,m=S.me,b='<button class="btn alt" onclick="cbAct(0)">Atacar</button>';for(var i=0;i<4;i++)for(var j=0;j<lvl(i);j++){var p=CP[i][j];b+='<button class="btn alt" onclick="cbAct('+(10+i*5+j)+')">'+p[0]+' ('+p[1]+' de energia)</button>';}b+='<button class="btn alt" onclick="cbAct(4)">Defender</button><button class="btn alt" onclick="cbAct(5)">Fugir</button>';var st=(c.u?' Bônus ativo.':'')+(c.g?' Guarda ativa.':'')+(c.sn?' Inimigo atordoado.':'');return'<div class="ev"><h2>Combate: '+e.n+'</h2><p>'+e.n+': '+e.hp+'/'+e.mhp+' de vida. Você: '+m.h+' de saúde, '+m.en+' de energia.'+st+'</p><p style="color:var(--mute)">'+c.l.slice(-4).join(' ')+'</p>'+b+'</div>';}
+function cbAct(k){var c=S.cb,m=S.me,e=c.e,cr=CC.indexOf(m.job)>=0?3:0,pb=3*(m.pets||[]).length,d=0,t='',bo=c.u>0?1.3:1;
+ if(k>=10){var i=Math.floor((k-10)/5),j=(k-10)%5,p=CP[i][j];if(m.en<p[1]){c.l.push('Energia insuficiente.');draw();return;}m.en-=p[1];
+  if(p[2]==='h'){var hh=ri(p[3]-3,p[3]+3)+lvl(i)*2;m.h=Math.min(100,m.h+hh);t=p[0]+': recupera '+hh+'.';}
+  else if(p[2]==='b'){c.g=2;t=p[0]+': você se protege.';}
+  else if(p[2]==='u'){c.u=3;t=p[0]+': seus golpes ficam mais fortes.';}
+  else if(p[2]==='e'){c.e=3;t=p[0]+': o inimigo perde precisão.';}
+  else{d=Math.round((ri(Math.round(p[3]*.8),Math.round(p[3]*1.2))+lvl(i)*2+cr+pb)*bo);t=p[0]+' causa '+d+'.';if(p[2]==='s'&&rnd()<.5){c.sn=1;t+=' O inimigo ficou atordoado.';}}}
+ else if(k===0){if(rnd()<.9){d=Math.round((ri(6,12)+lvl(0)*3+2*nt('forca')+cr+pb)*bo);t='Você acerta '+d+'.';}else t='Você erra o golpe.';}
+ else if(k===4){c.g=1;m.en=Math.min(100,m.en+5);t='Você se defende.';}
+ else{if(rnd()<.45+(nt('percepcao')?.2:0)){var ls=Math.min(m.m,ri(0,10));m.m-=ls;lg('Fugiu de '+e.n+(ls?' e perdeu '+ls+' no caminho':'')+'.');cbEnd();return;}t='Não conseguiu fugir.';}
+ e.hp-=d;
+ if(e.hp<=0){var rw=Math.round(c.rw*(cr&&c.ctx==='hunt'?1.5:1));m.m+=rw;if(cr)m.sk++;fa(c.ctx==='wild'?2:1);lg('Derrotou '+e.n+' e ganhou '+rw+'.');cbEnd();return;}
+ var u='';
+ if(c.sn){c.sn=0;u=e.n+' está atordoado e perde o turno.';}
+ else{var ph=e.hit-.06*Math.min(nt('percepcao'),4)-(c.e>0?.25:0);if(rnd()<ph){var x=ri(e.a[0],e.a[1]);if(c.g>0)x=Math.round(x/2);m.h-=x;u=e.n+' acerta '+x+'.';}else u=e.n+' erra.';}
+ if(c.g>0)c.g--;if(c.u>0)c.u--;if(c.e>0)c.e--;
+ c.l.push(t+' '+u);
+ if(m.h<=0){m.h=8;m.m=Math.floor(m.m/2);lg('Foi derrotado por '+e.n+', roubado e deixado ferido.');cbEnd();return;}
+ cm();save();draw();}
+var PA=[
+{id:'ferro',e:0,n:'Punho de Ferro',d:'Golpes pesados e defesa firme.',dm:.2,df:.1,w:3,p:[['Golpe de Ferro',12,'d',20],['Muralha de Aço',14,'b',0],['Punho Implacável',26,'d',42]]},
+{id:'dragao',e:0,n:'Estilo do Dragão',d:'Poder explosivo e lenda.',dm:.3,f:1,p:[['Garra do Dragão',14,'d',24],['Rugido',18,'s',22],['Chama do Dragão',32,'d',55]]},
+{id:'aguia',e:0,n:'Estilo da Águia',d:'Velocidade, esquiva e precisão.',dm:.15,df:.15,w:2,f:1,p:[['Bote da Águia',12,'d',18],['Voo Rasante',12,'v',0],['Tempestade de Garras',28,'d',44]]},
+{id:'corpo',e:0,n:'Corpo Absoluto',d:'Fortalecimento corporal absoluto.',dm:.1,df:.25,w:4,p:[['Pele de Diamante',14,'b',0],['Regeneração Marcial',16,'h',30],['Impacto Absoluto',30,'d',40]]},
+{id:'armas',e:0,n:'Mestre de Armas',d:'Domínio de todas as armas.',dm:.2,w:6,p:[['Corte Preciso',12,'d',20],['Desarmar',16,'s',20],['Dança das Lâminas',30,'d',48]]},
+{id:'fogo',e:1,n:'Mago de Fogo',d:'Dano contínuo e domínio da forja.',dm:.25,w:5,p:[['Bola de Fogo',14,'o',10],['Muralha de Chamas',16,'d',26],['Inferno',34,'d',58]]},
+{id:'necro',e:1,n:'Necromante',d:'Drena vida e levanta mortos. O povo teme.',dm:.1,w:8,s:-1,p:[['Drenar Vida',14,'l',16],['Levantar Mortos',20,'r',10],['Praga Negra',30,'o',16]]},
+{id:'arqui',e:1,n:'Arquimago',d:'Magia pura e conselheiro arcano.',dm:.3,w:6,f:1,p:[['Raio Arcano',12,'d',24],['Escudo Mágico',16,'b',0],['Cataclismo Arcano',38,'d',64]]},
+{id:'gelo',e:1,n:'Mago do Gelo',d:'Controle do campo de batalha.',df:.1,w:3,p:[['Lança de Gelo',12,'d',20],['Prisão de Gelo',20,'s',14],['Nevasca',32,'d',50]]},
+{id:'paladino',e:2,n:'Paladino',d:'Fé e aço. Exige Ki nível 2.',dm:.1,df:.2,f:1,s:1,rq:[0,2],p:[['Golpe Sagrado',14,'d',22],['Aura Divina',16,'b',0],['Luz Purificadora',26,'l',30]]},
+{id:'oraculo',e:2,n:'Oráculo',d:'Visões e maldições.',w:4,f:1,p:[['Visão do Futuro',12,'v',0],['Maldição',18,'e',0],['Palavra Sagrada',30,'s',28]]},
+{id:'clerigo',e:2,n:'Clérigo',d:'Cura e bênçãos.',df:.1,w:4,s:1,p:[['Cura Maior',16,'h',34],['Bênção Maior',14,'u',0],['Ressurgir',28,'h',55]]},
+{id:'domador',e:3,n:'Domador',d:'Aliados selvagens.',dm:.15,w:3,s:1,p:[['Chamado Selvagem',14,'r',9],['Matilha',22,'r',14],['Pacto de Sangue',28,'d',44]]},
+{id:'druida',e:3,n:'Druida',d:'A natureza como arma.',w:5,p:[['Espinhos',12,'o',9],['Casca de Árvore',14,'b',0],['Fúria da Natureza',32,'d',52]]},
+{id:'berserker',e:3,n:'Berserker',d:'Fúria total. Temido pelo povo.',dm:.35,f:1,s:-1,p:[['Frenesi',14,'u',0],['Golpe Desmedido',16,'d',30],['Fúria Total',32,'d',60]]}];
+var MSN=['Aldric','Brenna','Corvus','Delia','Edric','Fiora','Gael','Hesta','Ivor','Jora','Kael','Lyra','Moren','Nessa','Orin'];
+function MST(P){return'Mestre '+MSN[PA.indexOf(P)%MSN.length];}
+function myPaths(){var m=S.me;return PA.filter(function(p){return m.pa&&m.pa[p.e]===p.id;});}
+function pdm(){return 1+myPaths().reduce(function(a,p){return a+(p.dm||0);},0);}
+function pdf(){return 1-Math.min(.5,myPaths().reduce(function(a,p){return a+(p.df||0);},0));}
+function pimp(){var m=S.me;myPaths().forEach(function(p){m.m+=p.w||0;if(S.week%4===0&&p.f)fa(p.f);if(p.s){var q=npcR();if(q)q.rel+=p.s;}});}
+function rule(){if(S.lord!=='me')return;var m=S.me,d=S.dc=S.dc||{tx:1},al=S.npcs.filter(function(p){return!p.dead;});m.m+=Math.round(al.length*[.4,.8,1.5][d.tx]);if(d.tx===2){var q=npcR();if(q)q.rel-=1;}if(d.tx===0){var q2=npcR();if(q2)q2.rel=Math.min(100,q2.rel+1);}if(d.mur)al.forEach(function(p){p.w+=1;});if(d.ac){m.k+=1;if(rnd()<.02){var q3=npcR();if(q3&&q3.job!=='Estudioso'){q3.job='Estudioso';lg(q3.n+' ingressou na academia real.');}}}}
+var TQQ=[['Qual é o propósito da técnica?',['Destruir o inimigo','Proteger a si mesmo','Dominar o oponente']],['Como você a desenvolve?',['Estudando textos e teorias','Meditando em silêncio','Treinando até a exaustão']],['Que preço aceita pagar?',['Muita energia, poder enorme','Equilíbrio entre custo e poder','Pouca energia, poder modesto']]];
+var NM=[['Golpe','Postura','Pressão'],['Raio','Véu','Vínculo'],['Julgamento','Bênção','Voto'],['Garra','Pele','Instinto']],SF=['Erudito','Silencioso','Implacável'];
+function techQ(ei,n,ans){var q=TQQ[n];return{x:'Desenvolver técnica ('+(n+1)+'/3)',d:q[0],o:q[1].map(function(l,j){return ob(l,function(){var a2=ans.concat([j]);if(n<2)pend=techQ(ei,n+1,a2);else mkTech(ei,a2);});})};}
+function mkTech(ei,a){var m=S.me,kind=['d','b','s'][a[0]],base=kind==='d'?22:kind==='s'?16:0,mu=[1.5,1,.7][a[2]],cost=[28,18,10][a[2]];if(a[1]===0)m.k+=2;if(a[1]===2){m.h-=10;mu*=1.15;}var t={n:NM[ei][a[0]]+' '+SF[a[1]],e:ei,k:kind,p:Math.round(base*mu)+lvl(ei)*3,c:cost};m.tq=m.tq||[];m.tq.push(t);fa(1);lg('Criou uma técnica própria: '+t.n+' ('+EN[ei]+', custo '+cost+').');}
+function foeN(n){var h=40+Math.round(n.t[1]/2)+(CC.indexOf(n.job)>=0?15:0);S.cb={e:{n:n.n,hp:h,mhp:h,a:[5+Math.round(n.t[1]/20),10+Math.round(n.t[1]/12)],hit:.65},d:0,l:[n.n+' aceita o duelo.'],rw:ri(15,35),ctx:'duel',nid:n.id};}
+function pw(k){if(k>=200){var x=k-200,P=PA[Math.floor(x/3)],q=P.p[x%3];return[q[0],q[1],q[2],q[3],P.e];}if(k>=100){var u=S.me.tq[k-100];return[u.n,u.c,u.k,u.p,u.e];}var i=Math.floor((k-10)/5),p=CP[i][(k-10)%5];return[p[0],p[1],p[2],p[3],i];}
+function cbHtml(){var c=S.cb,e=c.e,m=S.me,b='<button class="btn alt" onclick="cbAct(0)">Atacar</button>',B=function(k){var p=pw(k);return'<button class="btn alt" onclick="cbAct('+k+')">'+p[0]+' ('+p[1]+' de energia)</button>';};
+ for(var i=0;i<4;i++)for(var j=0;j<lvl(i);j++)b+=B(10+i*5+j);
+ myPaths().forEach(function(P){var pi=PA.indexOf(P);for(var t=0;t<3;t++)if(lvl(P.e)>=3+t)b+=B(200+pi*3+t);});
+ (m.tq||[]).forEach(function(q,x){b+=B(100+x);});
+ b+='<button class="btn alt" onclick="cbAct(4)">Defender</button><button class="btn alt" onclick="cbAct(5)">Fugir</button>';
+ var st=(c.u?' Bônus ativo.':'')+(c.g?' Guarda ativa.':'')+(c.sn?' Inimigo atordoado.':'')+(c.o?' Inimigo sofrendo dano contínuo.':'')+(c.v?' Você está esquivando.':'')+(c.sm?' Aliado invocado.':'');
+ return'<div class="ev"><h2>Combate: '+e.n+'</h2><p>'+e.n+': '+e.hp+'/'+e.mhp+' de vida. Você: '+m.h+' de saúde, '+m.en+' de energia.'+st+'</p><p style="color:var(--mute)">'+c.l.slice(-4).join(' ')+'</p>'+b+'</div>';}
+function cbAct(k){var c=S.cb,m=S.me,e=c.e,cr=CC.indexOf(m.job)>=0?3:0,pb=3*(m.pets||[]).length,d=0,t='',bo=c.u>0?1.3:1,dm=pdm(),df=pdf();
+ if(k>=10){var p=pw(k),i=p[4],kd=p[2];if(m.en<p[1]){c.l.push('Energia insuficiente.');draw();return;}m.en-=p[1];
+  if(kd==='h'){var hh=ri(p[3]-3,p[3]+3)+lvl(i)*2;m.h=Math.min(100,m.h+hh);t=p[0]+': recupera '+hh+'.';}
+  else if(kd==='b'){c.g=2;t=p[0]+': você se protege.';}
+  else if(kd==='u'){c.u=3;t=p[0]+': seus golpes ficam mais fortes.';}
+  else if(kd==='e'){c.e=3;t=p[0]+': o inimigo perde precisão.';}
+  else if(kd==='v'){c.v=2;t=p[0]+': você se prepara para esquivar.';}
+  else if(kd==='r'){c.sm=4;c.sd=p[3]+lvl(i)*2;t=p[0]+': um aliado luta ao seu lado.';}
+  else if(kd==='o'){c.o=3;c.od=Math.round((p[3]+lvl(i)*2)*dm);t=p[0]+': o inimigo sofre dano contínuo.';}
+  else{d=Math.round((ri(Math.round(p[3]*.8),Math.round(p[3]*1.2))+lvl(i)*2+cr+pb)*bo*dm);t=p[0]+' causa '+d+'.';if(kd==='l'){m.h=Math.min(100,m.h+Math.round(d/2));t+=' Você recupera vida.';}if(kd==='s'&&rnd()<.5){c.sn=1;t+=' O inimigo ficou atordoado.';}}}
+ else if(k===0){if(rnd()<.9){d=Math.round((ri(6,12)+lvl(0)*3+2*nt('forca')+cr+pb)*bo*dm);t='Você acerta '+d+'.';}else t='Você erra o golpe.';}
+ else if(k===4){c.g=1;m.en=Math.min(100,m.en+5);t='Você se defende.';}
+ else{if(rnd()<.45+(nt('percepcao')?.2:0)){var ls=Math.min(m.m,ri(0,10));m.m-=ls;lg('Fugiu de '+e.n+(ls?' e perdeu '+ls+' no caminho':'')+'.');cbEnd();return;}t='Não conseguiu fugir.';}
+ e.hp-=d;
+ if(c.sm>0){var sd=Math.round(c.sd*dm);e.hp-=sd;c.sm--;t+=' Seu aliado causa '+sd+'.';}
+ if(c.o>0){e.hp-=c.od;c.o--;t+=' O dano contínuo causa '+c.od+'.';}
+ if(e.hp<=0){var rw=Math.round(c.rw*(cr&&c.ctx==='hunt'?1.5:1));m.m+=rw;if(cr)m.sk++;fa(c.ctx==='wild'?2:1);if(c.nid){var tn=byId(c.nid);if(tn)tn.rel-=30;fa(2);}lg('Derrotou '+e.n+' e ganhou '+rw+'.');cbEnd();return;}
+ var u='';
+ if(c.sn){c.sn=0;u=e.n+' está atordoado e perde o turno.';}
+ else if(c.v>0&&rnd()<.6)u='Você esquiva o ataque de '+e.n+'.';
+ else{var ph=e.hit-.06*Math.min(nt('percepcao'),4)-(c.e>0?.25:0);if(rnd()<ph){var x=ri(e.a[0],e.a[1]);if(c.g>0)x=Math.round(x/2);x=Math.round(x*df);m.h-=x;u=e.n+' acerta '+x+'.';}else u=e.n+' erra.';}
+ if(c.g>0)c.g--;if(c.u>0)c.u--;if(c.e>0)c.e--;if(c.v>0)c.v--;
+ c.l.push(t+' '+u);
+ if(m.h<=0){m.h=8;m.m=Math.floor(m.m/2);lg('Foi derrotado por '+e.n+', roubado e deixado ferido.');cbEnd();return;}
+ cm();save();draw();}
+ACTS.push({v:'kill',c:'Pessoas',n:'Assassinar a pessoa selecionada',d:'Arriscado. Consequências graves se for pego.'},{v:'child',c:'Pessoas',n:'Ter um filho com o cônjuge',d:'Exige um cônjuge vivo.'},{v:'gift',c:'Pessoas',n:'Presentear a pessoa selecionada',d:'Custa 10 e aumenta o afeto.'},{v:'duel',c:'Pessoas',n:'Desafiar para um duelo',d:'Combate contra a pessoa selecionada.'},
+{v:'product',c:'Negócios',n:'Desenvolver um produto',d:'Até 3 níveis, +15% de lucro cada.'},{v:'royalc',c:'Negócios',n:'Contrato com a nobreza',d:'Renda fixa por 12 semanas. Exige título.'},
+{v:'master',c:'Caminhos',n:'Estudar com um mestre',d:'Escolha o caminho abaixo. Custa 25.'},{v:'path',c:'Caminhos',n:'Seguir um caminho',d:'Exige nível 3 e 2 lições (ou nível 5).'},{v:'tech',c:'Caminhos',n:'Desenvolver uma técnica própria',d:'Escolha a energia abaixo e responda 3 perguntas.'},
+{v:'decree',c:'Poder',n:'Decretar uma medida',d:'Governante ou Governador. Escolha abaixo.'},{v:'coup',c:'Poder',n:'Dar um golpe de Estado',d:'Derruba o senhor da vila. Muito arriscado.'});
+CT=['Trabalho','Negócios','Equipe','Pessoas','Treino','Caminhos','Aventura','Prestígio','Poder'];
+var DC=[['taxup','Aumentar impostos'],['taxdn','Reduzir impostos'],['wall','Construir muralha (200)'],['acad','Fundar academia (250)'],['war','Declarar guerra ao reino vizinho (100)'],['feast','Dar um grande festival (80)']];
+function initActs(){$('act').innerHTML=ACTS.map(function(a){return'<option value="'+a.v+'">'+a.n+'</option>';}).join('');$('pa').innerHTML=PA.map(function(p){return'<option value="'+p.id+'">'+p.n+' ('+EN[p.e]+', '+MST(p)+'): '+p.d+'</option>';}).join('');$('dc').innerHTML=DC.map(function(d){return'<option value="'+d[0]+'">'+d[1]+'</option>';}).join('');}
+JX['_rei']=[EV('Conspiração contra você','Nobres insatisfeitos planejam derrubar seu governo.',[ob('Executar os suspeitos',function(){var a=S.npcs.filter(function(p){return!p.dead&&p.w>80&&p.sx!=='me';});for(var i=0;i<2;i++){var v=a.length?a.splice(Math.floor(rnd()*a.length),1)[0]:null;if(v){v.dead=1;lg(v.n+' foi executado por conspiração.');}}fa(-6);S.npcs.forEach(function(p){if(!p.dead)p.rel-=3;});}),ob('Investigar (30)',function(){lm(30);if(rnd()<.5){fa(4);lg('A conspiração foi descoberta e desfeita.');}else lg('A investigação não achou nada.');}),ob('Ignorar',function(){if(rnd()<.3){S.lord=0;S.me.of=0;fa(-10);lg('A conspiração deu certo: você foi deposto.');lordChk();}else lg('Nada aconteceu desta vez.');})]),
+EV('Embaixada do reino vizinho','Um enviado propõe uma aliança.',[ob('Aceitar a aliança',function(){gn(30,60,'A aliança rendeu presentes');fa(2);}),ob('Recusar',function(){lg('Recusou a aliança.');})]),
+function(){var d=S.dc||{};if(!(d.tx>=2))return null;return{x:'Revolta contra os impostos',d:'O povo protesta contra os impostos altos.',o:[ob('Reduzir os impostos',function(){S.dc.tx=1;fa(2);lg('Reduziu os impostos para acalmar o povo.');}),ob('Reprimir',function(){foe('duel');})]};},
+EV('Pedido de anistia','Presos pedem perdão ao novo governo.',[ob('Conceder',function(){for(var i=0;i<3;i++){var p=npcR();if(p)p.rel=Math.min(100,p.rel+5);}fa(2);lg('Concedeu anistia.');}),ob('Negar',function(){lg('Negou a anistia.');})])];
+JOBS['Desempregado']=0;
+var GJ={f:['Agricultor','Pescador'],t:['Ferreiro','Artesão'],l:['Comerciante'],r:['Curandeiro','Sacerdote']},GW={f:1,t:.35,l:.25,r:.25},GC={f:4,t:1.4,l:2,r:1},GN={f:'Comida',t:'Ferramentas',l:'Artigos de luxo',r:'Remédios'};
+var BG={'Barraca':'f','Oficina':'t','Loja':'l','Casa de Avaliações':'l','Consultório de Curas':'r','Mensageria':'t','Taverna':'f','Estalagem':'f','Ferraria':'t','Alquimia':'r','Caravana':'l','Casa de Câmbio':'l'};
+function ec(){S.ec=S.ec||{pr:{f:100,t:100,l:100,r:100},un:0};return S.ec;}
+function PX(g){return ec().pr[g];}
+function jg(j){for(var g in GJ)if(GJ[g].indexOf(j)>=0)return g;return null;}
+function jx(j){var g=jg(j);return g?Math.max(.7,Math.min(1.4,PX(g)/100)):1;}
+function hot(){var b=null;for(var g in GJ)if(!b||PX(g)>PX(b))b=g;return b;}
+function econ(){var E=ec(),al=S.npcs.filter(function(p){return!p.dead&&p.age>=16;}),ad=al.length;
+ for(var g in GJ){var sp=0;al.forEach(function(p){if(GJ[g].indexOf(p.job)>=0)sp+=1;if(p.bz&&(p.bg||'l')===g)sp+=2;});S.me.biz.forEach(function(b){if(BG[b.t]===g)sp+=(b.lv||1);});sp=Math.max(1,sp*GC[g]);var tg=Math.max(50,Math.min(220,100*ad*GW[g]/sp));E.pr[g]=Math.max(40,Math.min(250,Math.round(E.pr[g]+(tg-E.pr[g])*.15+ri(-3,3))));}
+ if(rnd()<.04){var gx=pk(Object.keys(GJ)),f=rnd()<.5?1.3:.75;E.pr[gx]=Math.round(Math.max(40,Math.min(250,E.pr[gx]*f)));lg((f>1?'Escassez de ':'Excesso de ')+GN[gx].toLowerCase()+': os preços '+(f>1?'dispararam':'despencaram')+'.');}
+ al.forEach(function(p){if(p.job==='Criança'||p.hb)return;var g=jg(p.job);if(g)p.w=Math.max(0,p.w+Math.round((PX(g)-100)/25));
+  if(g&&PX(g)<75&&rnd()<.03){lg(p.n+' perdeu o emprego de '+p.job+'.');p.job='Desempregado';}
+  else if(p.job==='Desempregado'&&rnd()<.06){var hg=hot();p.job=pk(GJ[hg]);lg(p.n+' conseguiu emprego como '+p.job+'.');}
+  var g2=p.bg||'l';
+  if(p.bz&&PX(g2)<70&&rnd()<.04){p.bz=0;lg(p.n+' fechou o negócio por falta de lucro.');}
+  else if(!p.bz&&p.w>80&&rnd()<.02){var hg2=hot();if(PX(hg2)>125){p.bz=1;p.bg=hg2;p.w-=40;lg(p.n+' abriu um negócio de '+GN[hg2].toLowerCase()+'.');}}});
+ E.un=ad?al.filter(function(p){return p.job==='Desempregado';}).length/ad:0;}
+function renderEco(){var E=ec(),m=S.me,al=S.npcs.filter(function(p){return!p.dead&&p.age>=16;}),h='',gs=m.gs||{};
+ if(!$('gd').options.length)$('gd').innerHTML=Object.keys(GN).map(function(g){return'<option value="'+g+'">'+GN[g]+'</option>';}).join('');
+ for(var g in GJ){var v=E.pr[g];h+='<div class="kv"><span>'+GN[g]+(gs[g]>0?' (seu estoque: '+Math.round(gs[g])+')':'')+'</span><span>'+v+(v>130?' (caro)':v<75?' (barato)':' (normal)')+'</span></div>';}
+ h+='<div class="kv"><span>Desemprego</span><span>'+Math.round((E.un||0)*100)+'%</span></div><div class="kv"><span>Negócios de NPCs</span><span>'+al.filter(function(p){return p.bz;}).length+'</span></div>';
+ $('eco').innerHTML=h;}
+ACTS.push({v:'buyg',c:'Negócios',n:'Comprar um lote de mercadorias',d:'Custa 50 ao preço atual. Escolha o item abaixo.'},{v:'sellg',c:'Negócios',n:'Vender o estoque de mercadorias',d:'Vende tudo ao preço atual. Escolha o item abaixo.'});
+function kid(){var m=S.me;if(!m.sx||m.age<18||m.age>45||rnd()>.008)return;var s=byId(m.sx);if(!s||s.dead||S.npcs.length>=70)return;var k=mk(0);k.job='Criança';k.sp=m.sp;k.pf=1;k.rel=70;S.npcs.push(k);lg('Você e '+s.n+' tiveram um filho: '+k.n+'.');}
+function hrs(){var m=S.me,r=[];S.npcs.forEach(function(p){if(p.dead||p.age<16)return;var t=p.pf?'filho(a)':(m.sx===p.id?'cônjuge':(p.rel>=40?'amigo(a) próximo(a)':''));if(t)r.push({p:p,t:t});});return r;}
+function succ(id){var o=S.me,p=byId(id);if(!p)return;var pf=p.pf?1:0,fam=pf||o.sx===p.id,sp=p.sp,ps=typeof p.sx==='number'?byId(p.sx):null,job=p.job==='Criança'?'Desempregado':p.job;
+ var ap=SP[sp].e.map(function(x,i){var b=Math.round(x*ri(10,60));return pf&&sp===o.sp?Math.round((o.ap[i]+b)/2):b;});
+ S.npcs=S.npcs.filter(function(x){return x.id!==id;});
+ S.npcs.forEach(function(x){if(x.sx===id)x.sx=null;x.fr=(x.fr||[]).filter(function(y){return y!==id;});x.ri=(x.ri||[]).filter(function(y){return y!==id;});if(!x.pf)x.rel=Math.round(x.rel/2);x.hb=0;});
+ S.me={n:p.n,sp:sp,age:p.age,cl:o.cl,rg:o.rg,job:job,pay:JOBS[job]||4,ct:fam?o.ct.slice(0,3):[],biz:fam?o.biz:[],m:Math.round(o.m*(fam?.5:.2))+p.w,h:100,en:80,k:ri(0,10),sk:ri(0,10),ap:ap,tr:[0,0,0,0],rev:[0,0,0,0],hue:p.hue,sx:null,fm:Math.round((o.fm||0)/2),ti:pf?(o.ti||0):Math.max(0,(o.ti||0)-1),of:0,pets:fam?(o.pets||[]):[],ad:0,gd:fam?(o.gd||null):null,st:[],rk:0};
+ if(ps){S.me.sx=ps.id;ps.sx='me';}
+ if(S.lord==='me'&&!fam)S.lord=0;S.over=null;S.sel=null;S.selJ=null;lg('Você assumiu o legado de '+o.n+' como '+p.n+'.');save();draw();}
+function rm(p,t){p.mem=p.mem||[];p.mem.push(t);if(p.mem.length>4)p.mem.shift();}
+function nm(a){a=(a||[]).map(byId).filter(function(x){return x&&!x.dead;});return a.length?a.map(function(x){return x.n;}).join(', '):'nenhum';}
+function gl(p){return['riqueza','aventura','família','estudo'][p.t.indexOf(Math.max.apply(null,p.t))];}
+function ng(p){
+ if(p.age<18)return;
+ var g=gl(p),r=rnd();
+ if(g==='riqueza'&&!p.bz&&p.w>60&&r<.03){p.bz=1;p.bg=hot();p.w-=40;lg(p.n+' abriu um negócio próprio.');}
+ else if(g==='aventura'&&r<.012&&CC.indexOf(p.job)<0){p.job=pk(CC);lg(p.n+' seguiu a carreira de '+p.job+'.');}
+ else if(g==='estudo'&&r<.012&&p.job!=='Estudioso'){p.job='Estudioso';lg(p.n+' passou a se dedicar aos estudos.');}
+ else if(g==='família'&&!p.sx&&r<.01){p.w+=0;}
+ if(p.bz)p.w+=Math.round(6*PX(p.bg||'l')/100)-3;
+ if(rnd()<.012){var q=pk(S.npcs);if(q&&!q.dead&&q.id!==p.id&&q.age>=16){q.fr=q.fr||[];q.ri=q.ri||[];var d=0;for(var i=0;i<4;i++)d+=Math.abs(p.t[i]-q.t[i]);if(d<120&&p.fr.indexOf(q.id)<0){p.fr.push(q.id);q.fr.push(p.id);lg(p.n+' e '+q.n+' viraram amigos.');}else if(d>=190&&p.ri.indexOf(q.id)<0){p.ri.push(q.id);q.ri.push(p.id);lg(p.n+' e '+q.n+' viraram rivais.');}}}
+}
+function newOp(){if(S.ops.length>=8)return;var p=npcR(),j=rnd()<.4?pk(GJ[hot()]):pk(JN);if(!p)return;S.ops.push({id:S.nid++,job:j,emp:p.id,en:p.n,pay:Math.round(JOBS[j]*jx(j))+ri(0,3),w:S.week});}
+function npcStep(){
+  S.npcs.forEach(function(p){
+    if(p.dead)return;
+    if(p.job!=="Criança")p.w=Math.max(0,p.w+ri(-3,Math.round(JOBS[p.job]/2)));
+    p.fr=p.fr||[];p.ri=p.ri||[];p.mem=p.mem||[];ng(p);var mx=SP[p.sp].max;
+    if(p.age>mx*.7&&rnd()<(p.age-mx*.7)/(mx*.6)*.02){p.dead=1;lg(p.n+" morreu aos "+p.age+" anos.");if(p.sx==="me")S.me.sx=null;if(p.sx){var q0=byId(p.sx);if(q0)q0.sx=null;}p.sx=null;return;}
+    if(!p.sx&&p.age>=18&&rnd()<.01){
+      var c=S.npcs.filter(function(q){return!q.dead&&!q.sx&&q.id!==p.id&&q.age>=18&&Math.abs(q.age-p.age)<15;});
+      if(c.length){var q=pk(c);p.sx=q.id;q.sx=p.id;lg(p.n+" e "+q.n+" se casaram.");}
+    }else if(p.sx&&p.id<p.sx&&p.age>=18&&p.age<mx*.5&&rnd()<.006&&alive()<60){
+      var k=mk(0);k.job="Criança";S.npcs.push(k);lg(p.n+" teve um filho: "+k.n+".");
+    }
+  });
+}
+function npcR(){var a=S.npcs.filter(function(p){return!p.dead&&p.age>=16;});return a.length?pk(a):null;}
+var EVS=[
+function(){var p=npcR(),j=pk(JN);if(!p||!qok(j))return null;return{x:"Proposta de "+p.n,d:p.n+" oferece uma vaga de "+j+" (base de "+JOBS[j]+" por semana). Você perderia parte da experiência atual.",o:[{l:"Aceitar",f:function(){S.me.job=j;S.me.pay=JOBS[j];S.me.sk=0;S.me.rk=0;lg("Mudou de ofício para "+j+".");}},{l:"Recusar",f:function(){p.rel-=2;lg("Recusou a proposta de "+p.n+".");}}]};},
+function(){return{x:"Febre na vila",d:"Você acordou com febre alta.",o:[{l:"Pagar um curandeiro (10)",f:function(){if(S.me.m>=10){S.me.m-=10;S.me.h+=5;lg("Foi tratado pelo curandeiro.");}else{S.me.h-=15;lg("Sem dinheiro, a febre castigou.");}}},{l:"Descansar em casa",f:function(){S.me.h-=12;S.me.en+=10;lg("Enfrentou a febre sozinho.");}}]};},
+function(){return{x:"Colheita ruim",d:"A comida vai ficar mais cara por algumas semanas.",o:[{l:"Pagar mais caro (12)",f:function(){S.shock=1;S.shT=8;S.me.m=Math.max(0,S.me.m-12);lg("A comida encareceu.");}},{l:"Comer menos",f:function(){S.shock=1;S.shT=8;S.me.h-=5;S.me.en-=5;lg("A comida encareceu e você passou apertado.");}}]};},
+function(){return{x:"Festival da colheita",d:"A cidade inteira vai à praça.",o:[{l:"Participar (3)",f:function(){S.me.m=Math.max(0,S.me.m-3);S.me.en-=5;for(var i=0;i<3;i++){var p=npcR();if(p)p.rel=Math.min(100,p.rel+6);}lg("Fez contatos no festival.");}},{l:"Ficar em casa",f:function(){S.me.en+=10;lg("Ficou em casa durante o festival.");}}]};},
+function(){var p=npcR();if(!p)return null;return{x:"Rumor sobre "+p.n,d:"Dizem que "+p.n+" andou desviando mercadorias. Ninguém sabe se é verdade.",o:[{l:"Defender "+p.n,f:function(){p.rel=Math.min(100,p.rel+10);lg("Defendeu "+p.n+" publicamente.");}},{l:"Ignorar",f:function(){lg("Ignorou o rumor sobre "+p.n+".");}}]};},
+function(){var a=S.npcs.filter(function(p){return!p.dead&&p.ri&&p.ri.length;});if(!a.length)return null;var p=pk(a),q=byId(pk(p.ri));if(!q||q.dead)return null;return{x:'Briga entre '+p.n+' e '+q.n,d:'Os rivais discutem na praça e a vila toma partido.',o:[ob('Mediar a disputa',function(){p.rel=Math.min(100,p.rel+4);q.rel=Math.min(100,q.rel+4);p.ri=p.ri.filter(function(x){return x!==q.id;});q.ri=(q.ri||[]).filter(function(x){return x!==p.id;});rm(p,'Você mediou minha briga com '+q.n+'.');rm(q,'Você mediou minha briga com '+p.n+'.');lg('Mediou a briga entre '+p.n+' e '+q.n+'; fizeram as pazes.');}),ob('Apoiar '+p.n,function(){p.rel=Math.min(100,p.rel+8);q.rel-=8;rm(p,'Você tomou meu partido contra '+q.n+'.');rm(q,'Você apoiou '+p.n+' contra mim.');lg('Apoiou '+p.n+' contra '+q.n+'.');}),ob('Ficar de fora',function(){lg('Ficou de fora da briga entre '+p.n+' e '+q.n+'.');})]};}
+];
+function choose(i){var o=pend.o[i],p0=pend;o.f();cm();if(pend===p0)pend=null;if(S.me.h<=0)S.over=["Você morreu","A saúde chegou a zero."];save();draw();}
+function pick(id){S.sel=id;draw();}
+function pj(id){S.selJ=id;draw();}
+function draw(){
+  var m=S.me,y=1+Math.floor(S.week/52),w=S.week%52+1,se=["Primavera","Verão","Outono","Inverno"][Math.floor((w-1)/13)];
+  $("cal").textContent="Ano "+y+", semana "+w+" ("+se+"). Comida: "+pr()+" por semana. Senhor da vila: "+(S.lord==="me"?"você":(lo()?lo().n:"ninguém"))+".";
+  $("me").innerHTML='<div class="row"><div class="pt" style="background:hsl('+m.hue+',45%,40%)">'+m.n[0]+'</div><div><h2>'+m.n+'</h2><small>'+m.sp+', '+m.age+' anos</small></div></div><div style="margin-top:8px"><div class="kv"><span>Origem</span><span>Família '+CL[m.cl].toLowerCase()+'</span></div><div class="kv"><span>Religião</span><span>'+m.rg+'</span></div><div class="kv"><span>Ofício</span><span>'+m.job+(m.job==="Desempregado"?"":" ("+RK[m.rk||0]+")")+'</span></div><div class="kv"><span>Cônjuge</span><span>'+(m.sx&&byId(m.sx)?byId(m.sx).n:"ninguém")+'</span></div><div class="kv"><span>Título</span><span>'+TI[m.ti||0]+'</span></div><div class="kv"><span>Cargo</span><span>'+OF[m.of||0]+'</span></div><div class="kv"><span>Fama</span><span>'+(m.fm||0)+'</span></div><div class="kv"><span>Caminhos</span><span>'+((m.pa||[]).filter(Boolean).map(function(id){return PA.find(function(x){return x.id===id;}).n;}).join(", ")||"nenhum")+'</span></div><div class="kv"><span>Técnicas próprias</span><span>'+((m.tq||[]).map(function(q){return q.n;}).join(", ")||"nenhuma")+'</span></div><div class="kv"><span>Poder</span><span>'+(S.lord==="me"?"Governante":"nenhum")+'</span></div><div class="kv"><span>Guilda</span><span>'+(m.gd?m.gd.n+" nv "+m.gd.lv:"nenhuma")+'</span></div><div class="kv"><span>Equipe</span><span>'+((m.st||[]).map(function(s){var p=byId(s.id);return p?p.n+" ("+ORD[s.o]+")":"";}).join(", ")||"ninguém")+'</span></div><div class="kv"><span>Companheiros</span><span>'+((m.pets||[]).join(", ")||"nenhum")+'</span></div><div class="kv"><span>Filhos</span><span>'+S.npcs.filter(function(p){return p.pf&&!p.dead;}).length+'</span></div><div class="kv"><span>Dinheiro</span><span>'+m.m+'</span></div><div class="kv"><span>Saúde</span><span>'+m.h+'</span></div><div class="kv"><span>Energia</span><span>'+m.en+'</span></div><div class="kv"><span>Conhecimento</span><span>'+m.k+'</span></div><div class="kv"><span>Habilidade no ofício</span><span>'+m.sk+'</span></div></div><h2 style="margin-top:10px">Negócios e contatos</h2><div class="kv"><span>Negócios</span><span>'+(m.biz.length?m.biz.map(function(b){return b.t+" nv "+(b.lv||1);}).join(", "):"nenhum")+'</span></div><div class="kv"><span>Contatos comerciais</span><span>'+m.ct.length+'</span></div><h2 style="margin-top:10px">Energias e habilidades</h2>'+EN.map(function(e,i){return'<div class="kv"><span>'+e+' (nível '+lvl(i)+')</span><span>'+(m.rev[i]?"aptidão "+lv(m.ap[i]):"treino "+m.tr[i]+"/15")+'</span></div>'+SK[i].map(function(s,j){return'<div style="font-size:.85rem;color:'+(lvl(i)>j?"var(--ink)":"var(--mute)")+';padding:1px 0 1px 8px">'+(lvl(i)>j?"✓ "+s[0]+": "+s[1]:"Nível "+(j+1)+": bloqueada")+'</div>';}).join("");}).join("");
+  var l=S.npcs.slice().sort(function(a,b){return a.dead-b.dead||b.rel-a.rel;});
+  $("city").innerHTML=l.map(function(p){return'<button class="np'+(S.sel===p.id?" sel":"")+(p.dead?" dead":"")+'" onclick="pick('+p.id+')"><div class="pt" style="background:hsl('+p.hue+',45%,40%)">'+p.n[0]+'</div><div>'+TT[p.nb||0]+p.n+(p.dead?" (falecido)":"")+'<small>'+p.job+', '+p.age+' anos</small></div><span class="r">'+af(p.rel)+' ('+p.rel+')</span></button>';}).join("");
+  var n=S.sel?byId(S.sel):null,sp=n&&n.sx?byId(n.sx):null;
+  $("npc").innerHTML=n?'<h2>'+TT[n.nb||0]+n.n+'</h2><div class="kv"><span>Afeto por você</span><span>'+af(n.rel)+' ('+n.rel+')</span></div><div class="bar"><i style="width:'+Math.max(0,Math.min(100,Math.round((n.rel+50)*100/150)))+'%"></i></div><div class="kv"><span>Espécie</span><span>'+n.sp+(n.pf?' (seu filho)':'')+'</span></div><div class="kv"><span>Ofício</span><span>'+n.job+'</span></div><div class="kv"><span>Posses</span><span>'+(n.w<20?"poucas":n.w<60?"remediado":"abastado")+'</span></div><div class="kv"><span>Cônjuge</span><span>'+(n.sx==="me"?"você":sp?sp.n:"ninguém")+'</span></div>'+((n.rel>=20||n.kn)?n.t.map(function(v,i){return'<div class="kv"><span>'+TN[i]+'</span><span>'+lv(v)+'</span></div>';}).join("")+'<div class="kv"><span>Objetivo de vida</span><span>'+gl(n)+(n.bz?', com negócio próprio':'')+'</span></div><div class="kv"><span>Amigos</span><span>'+nm(n.fr)+'</span></div><div class="kv"><span>Rivais</span><span>'+nm(n.ri)+'</span></div>'+((n.mem||[]).length?'<p style="color:var(--mute)">Lembranças: '+n.mem.join(' ')+'</p>':''):'<p style="color:var(--mute)">Você ainda conhece pouco esta pessoa. Passe tempo com ela para saber mais.</p>'):'<h2>Pessoa</h2><p style="color:var(--mute)">Selecione alguém na lista.</p>';
+  $("log").innerHTML=S.log.slice(0,25).map(function(x){return"<li>"+x+"</li>";}).join("");
+  $("ops").innerHTML=S.ops.length?S.ops.map(function(o){var q=qtx(o.job);return'<button class="np'+(S.selJ===o.id?" sel":"")+'" onclick="pj('+o.id+')"><div>'+o.job+' ('+o.pay+' por semana)<small>'+o.en+(q?', exige '+q:'')+(JT[o.job]?', favorece '+TG[JT[o.job]]:'')+'</small></div><span class="r">'+chance(o)+'%</span></button>';}).join(""):'<p style="color:var(--mute)">Nenhuma vaga aberta agora.</p>';
+  var kh="";EN.forEach(function(e,i){for(var j=0;j<lvl(i);j++)kh+='<option value="'+i+'-'+j+'">'+SK[i][j][0]+' ('+e+')</option>';});
+  if(!kh)kh='<option value="">(nenhuma habilidade ainda)</option>';
+  if($("ks").dataset.h!==kh){$("ks").innerHTML=kh;$("ks").dataset.h=kh;}
+  var ev=$("ev");
+  if(S.over)ev.innerHTML='<div class="ev"><h2>'+S.over[0]+'</h2><p>'+S.over[1]+'</p>'+(hrs().length?'<p>Continue o legado como:</p>'+hrs().map(function(h){return'<button class="btn alt" onclick="succ('+h.p.id+')">'+h.p.n+' ('+h.t+', '+h.p.age+' anos)</button>';}).join(""):'<p>Não há herdeiros adultos. Use Novo personagem para recomeçar.</p>')+'</div>';
+  else if(S.cb)ev.innerHTML=cbHtml();else if(pend)ev.innerHTML='<div class="ev"><h2>'+pend.x+'</h2><p>'+pend.d+'</p>'+pend.o.map(function(o,i){return'<button class="btn alt" onclick="choose('+i+')">'+o.l+'</button>';}).join("")+'</div>';
+  else ev.innerHTML="";
+  $("go").disabled=!!(pend||S.over||S.cb);renderActs();renderEco();
+}
+function save(v){try{if(!pend&&!S.cb){localStorage.setItem(KEY,JSON.stringify(S));if(v)msg("");}else if(v)msg("Resolva o evento antes de salvar.");}catch(e){if(v)msg("Não foi possível salvar neste navegador. Use Exportar.");}}
+function exp(){$("bk").value=JSON.stringify(S);$("bk").select();}
+function imp(){try{var o=JSON.parse($("bk").value);if(!o||!o.me||!o.npcs||o.v!==2)throw 1;S=o;pend=null;msg("");draw();}catch(e){msg("Save inválido. Cole o texto exportado completo.");}}
+function nw(){var b=$("nw");if(!nwc){nwc=1;b.textContent="Confirmar: apaga o atual";return;}nwc=0;b.textContent="Novo personagem";pend=null;newGame();save();draw();}
+function auto(){var b=$("auto");if(timer){clearInterval(timer);timer=null;b.textContent="Tempo automático: desligado";}else{b.textContent="Tempo automático: ligado";timer=setInterval(function(){if(!pend&&!S.over&&!S.cb){var c=$("act").value;if(c==="soc"||c==="help"){if(!S.sel)return;}step();}},1500);}}
+(function(){var ok=0;try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&o.me&&o.npcs){S=o;ok=1;}}}catch(e){}$("bz").innerHTML=Object.keys(BZ).map(function(k){return'<option value="'+k+'">'+k+' (custo '+BZ[k].c+(BZ[k].q?', exige '+TG[BZ[k].q]:'')+')</option>';}).join("");initActs();if(!ok)newGame();draw();})();
+</script>
+</body>
+</html>
