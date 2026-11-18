@@ -856,6 +856,63 @@ function(){return{x:'Inspeção do senhor',d:'Fiscais examinam os comércios.',o
 var _s6=step;step=function(){if($('gm'))return;var w0=S.week;_s6();if(S.week>w0&&!pend&&!S.cb&&!S.over&&!$('gm')&&rnd()<.25){pend=pk(EVX)();draw();}};
 var _tk3=tick;tick=function(){_tk3();var m=S.me,w=W();if(hp('resp'))m.en=Math.min(100,m.en+5);if(hp('dipl'))w.kg.forEach(function(k){if(k.f&&!k.wr)k.rel=Math.min(100,k.rel+.3);});if(hp('arti'))(m.ins||[]).forEach(function(x){if(x)m.m+=x.lv;});};
 
+/* ===== v7: órfãos/protegidos e grandes casas ===== */
+var FD=[{n:'Casa Valmor',sp:'Humano',c:'Esgrima Real: estocadas precisas e guarda firme',g:'Selos de Ordem',p:4,bm:0,t:[['Estocada Real',0,'d',38,22],['Guarda Real',0,'b',0,12]],rq:[['Espada de Valmor','dm',.12],['Brasão Real','f',1]]},
+{n:'Casa Khazrim',sp:'Anão',c:'Martelo Rúnico: golpes lentos e devastadores',g:'Runas de Forja',p:5,bm:0,t:[['Martelo Rúnico',1,'d',44,26],['Runa de Pedra',1,'b',0,12]],rq:[['Martelo-Trovão','dm',.15],['Armadura Rúnica','h',3]]},
+{n:'Casa Sylvaren',sp:'Elfo',c:'Arco Lunar: ataques à distância e esquiva',g:'Magia da Lua',p:4,bm:0,t:[['Flecha Lunar',1,'d',36,20],['Névoa Lunar',1,'s',26,18]],rq:[['Arco Lunar','dm',.1],['Manto de Prata','en',5]]},
+{n:'Casa Rakkar',sp:'Povo-fera',c:'Caça em Matilha: ferocidade e emboscadas',g:'Instinto Selvagem',p:5,bm:1,t:[['Investida da Matilha',3,'d',34,20],['Uivo Aterrador',3,'s',24,16]],rq:[['Presa Ancestral','dm',.1],['Pele de Alfa','h',3]]},
+{n:'Casa Nocthar',sp:null,c:'Lâminas Sombrias: golpes traiçoeiros',g:'Sombras Proibidas',p:6,bm:1,t:[['Lâmina Sombria',0,'d',40,22],['Véu de Sombras',1,'b',0,12]],rq:[['Adaga do Silêncio','dm',.1],['Anel do Contrabando','m',6]]},
+{n:'Casa Solenn',sp:null,c:'Ordem Sagrada: fé e armadura abençoada',g:'Preces e Milagres',p:4,bm:0,t:[['Golpe Sagrado Maior',2,'d',32,20],['Bênção de Solenn',2,'b',0,12]],rq:[['Cálice Sagrado','en',6],['Cetro da Fé','f',1]]}];
+var FXT={'0-1':20,'0-2':10,'0-3':-40,'0-4':-40,'0-5':20,'1-2':-30,'1-3':-10,'1-4':-10,'1-5':10,'2-3':15,'2-4':-10,'2-5':15,'3-4':5,'3-5':-10,'4-5':-50};
+var _W2=W;W=function(){var w=_W2();if(!w.fh){w.fh=FD.map(function(d,i){return{n:d.n,sp:d.sp,c:d.c,g:d.g,p:d.p,bm:d.bm,t:d.t,rq:d.rq,r:ri(-5,15),f:i===0?1:0,pt:0,dw:0};});w.fx={};for(var k in FXT)w.fx[k]=FXT[k];}return w;};
+function fxr(i,j){return W().fx[Math.min(i,j)+'-'+Math.max(i,j)]||0;}function fxa(i,j,d){var k=Math.min(i,j)+'-'+Math.max(i,j),w=W();w.fx[k]=Math.max(-100,Math.min(100,(w.fx[k]||0)+d));}
+function rdesc(r){return{dm:'+'+Math.round(r[2]*100)+'% de dano',h:'+'+r[2]+' saúde/semana',en:'+'+r[2]+' fôlego/semana',m:'+'+r[2]+' ouro/semana',f:'+fama'}[r[1]];}
+function eqv(k){return(S.me.rq||[]).reduce(function(a,r){return a+(r.k===k?r.v:0);},0);}
+function giveRelic(H){var m=S.me;m.rq=m.rq||[];var r=H.rq.find(function(x){return!m.rq.some(function(o){return o.n===x[0];});});if(!r){fa(1);return;}m.rq.push({n:r[0],k:r[1],v:r[2],d:rdesc(r)});lg('Obteve a relíquia '+r[0]+' ('+rdesc(r)+').');}
+function giveTech(H){var m=S.me;m.tq=m.tq||[];var t=H.t.find(function(x){return!m.tq.some(function(o){return o.n===x[0];});});if(!t){m.k+=2;return;}m.tq.push({n:t[0],e:t[1],k:t[2],p:t[3]+lvl(t[1])*2,c:t[4]});lg('A '+H.n+' lhe ensinou: '+t[0]+'.');}
+function revH(){var w=W(),u=w.fh.filter(function(h){return!h.f;});if(!u.length)return;var h=pk(u);h.f=1;lg('Ouviu falar da '+h.n+' ('+(h.sp||'raças mistas')+').');}
+var _dc3=disc;disc=function(){var p=_dc3();if(rnd()<.3)revH();return p;};
+var _pd3=pdm;pdm=function(){return _pd3()+eqv('dm');};
+function hm(i){var w=W(),H=w.fh[i],m=S.me,lk=w.fh.map(function(o,j){return j!==i&&o.f?o.n.replace('Casa ','')+' '+fxr(i,j):'';}).filter(Boolean).join(', '),
+ o=[ob('Presentear (50)',function(){if(m.m<50){lg('Sem dinheiro.');return;}lm(50);H.r+=ri(8,14);lg('A '+H.n+' recebeu seus presentes.');}),
+ ob('Duelo ritual contra o campeão',function(){if(m.h<50){lg('Saúde baixa demais.');return;}foe('hunt',['Campeão da '+H.n,70+H.p*8+W().nq*10,8+H.p,15+H.p*2,120+H.p*20]);S.cb.ctx='casa';S.cb.hi=i;}),
+ ob('Pedir ensinamentos (40, relação 35+)',function(){if(H.r<35||m.m<40){lg('A casa ainda não confia em você.');return;}lm(40);giveTech(H);}),
+ ob('Comprar uma relíquia (150, relação 25+)',function(){if(H.r<25||m.m<150){lg('A casa recusa ou falta dinheiro.');return;}lm(150);giveRelic(H);})];
+ if(H.bm){o.push(H.pt?ob('Encerrar a sociedade no mercado negro',function(){H.pt=0;H.r-=10;}):ob('Tornar-se sócio do mercado negro (relação 20+)',function(){if(H.r<20){lg('Não confiam em você.');return;}H.pt=1;m.su=1;lg('Você virou sócio do mercado negro da '+H.n+'.');}));o.push(ob('Denunciar o mercado negro da casa',function(){H.bm=0;H.pt=0;H.r-=30;fa(3);w.md=Math.min(100,w.md+2);lg('Você expôs a '+H.n+'. A vila o aplaude, a casa o odeia.');}));}
+ o.push(ob('Provocar rivalidade com outra casa (60)',function(){var os=w.fh.map(function(x,j){return j;}).filter(function(j){return j!==i&&w.fh[j].f;});if(m.m<60||!os.length)return;lm(60);var j=pk(os);fxa(i,j,-25);lg('Você atiçou a rivalidade entre a '+H.n+' e a '+w.fh[j].n+'.');}),ob('Sair',function(){}));
+ return{x:H.n,d:(H.sp||'Raças mistas')+'. Luta: '+H.c+'. Magia: '+H.g+'. Mercado negro: '+(H.bm?(H.pt?'você é sócio':'participa'):'não participa')+'. Relação: '+H.r+'. Laços: '+lk+'.',o:o};}
+NA.casa=function(){var i=+$('pl').value;if(!W().fh[i]||!W().fh[i].f){msg('Escolha uma casa conhecida.');return false;}S.me.en-=5;XP=function(){return hm(i);};return true;};
+var _ce4=cbEnd;cbEnd=function(){var c=S.cb,won=c&&c.ctx==='casa'&&c.e.hp<=0;_ce4();if(won){var H=W().fh[c.hi];H.r+=15;fa(3);if(!H.dw){H.dw=1;giveRelic(H);}lg('Você venceu o campeão da '+H.n+'.');}};
+function mkWard(orph){var n=mk(ri(12,15));n.wd=1;n.ad=S.week;n.a0=n.age;n.help=orph?5:15;n.rel=Math.max(n.rel||0,15);n.job='Desempregado';S.npcs.push(n);lg((orph?'Um órfão chegou ao orfanato: ':'Você adotou ')+n.n+' ('+n.sp+', '+n.age+' anos).');return n;}
+NA.orfao=function(){var m=S.me;m.en-=5;XP=function(){var ws=S.npcs.filter(function(p){return p.wd&&!p.dead;});return{x:'Órfãos e protegidos',d:'Protegidos: '+ws.length+'. Orfanato: nível '+(m.orf||0)+'. Quanto mais você ajuda, maior a devoção deles quando crescerem.',o:[
+ ob('Adotar um jovem órfão (30)',function(){if(m.m<30){lg('Sem dinheiro.');return;}lm(30);mkWard(0);fa(1);}),
+ ob('Apoiar os órfãos da vila (40)',function(){if(m.m<40){lg('Sem dinheiro.');return;}lm(40);S.npcs.forEach(function(p){if(p.wd)p.help+=6;});fa(1);W().md=Math.min(100,W().md+2);lg('Você apoiou os órfãos da vila.');}),
+ ob((m.orf?'Ampliar':'Fundar')+' o orfanato ('+150*((m.orf||0)+1)+')',function(){var c=150*((m.orf||0)+1);if((m.orf||0)>=3||m.m<c){lg('Nível máximo ou falta dinheiro.');return;}lm(c);m.orf=(m.orf||0)+1;fa(2);lg('O orfanato agora é nível '+m.orf+'.');}),
+ ob('Educar o protegido selecionado (20)',function(){var n=S.sel?byId(S.sel):null;if(!n||!n.wd){lg('Selecione um protegido na lista de pessoas.');return;}if(m.m<20)return;lm(20);n.help+=10;n.fe=ri(0,3);n.rel=Math.min(100,n.rel+4);lg('Você educou '+n.n+' ('+EN[n.fe]+').');}),
+ ob('Sair',function(){})]};};return true;};
+function growEv(p){var f=Math.min(100,Math.round(p.help*1.1+(p.rel>50?10:0)));p.fan=f;p.gr=1;var lb=f>=70?'devoção fanática':f>=40?'lealdade profunda':f>=15?'gratidão':'distância';
+ return{x:p.n+' cresceu',d:p.n+' ('+p.sp+') completou 18 anos. Pelo que você fez por '+(p.sp?'ele(a)':'')+', sente '+lb+' por você.',o:[ob('Convidar a servi-lo',function(){if(f>=15){p.fol=1;p.wd=0;lg(p.n+' jurou servi-lo'+(f>=70?' com fanatismo':'')+'.');}else{p.rel-=20;p.wd=0;lg(p.n+' recusou e seguiu o próprio caminho.');}}),ob('Apoiar a carreira própria (50)',function(){if(m1().m<50)return;lm(50);p.wd=0;p.fan+=10;p.rel=Math.min(100,p.rel+20);fa(2);lg('Você patrocinou o futuro de '+p.n+'.');}),ob('Deixar partir',function(){p.wd=0;lg(p.n+' partiu em paz.');})]};}
+function m1(){return S.me;}
+AV.orfao=function(m){return m.age>=18&&m.m>=20;};AV.casa=function(m){return W().fh.some(function(h){return h.f;});};
+[{v:'orfao',c:'Pessoas',n:'Órfãos: adotar, apoiar e educar',d:'Adote jovens e apoie órfãos. Quando crescem, podem passar a servi-lo.'},{v:'casa',c:'Mundo',n:'Relações com as grandes casas',d:'Duelos, técnicas, relíquias e mercado negro. Escolha a casa abaixo.'}].forEach(function(a){ACTS.push(a);});
+var _ra5=renderActs;renderActs=function(){_ra5();if($('act').value==='casa'){var w=W(),pl=$('pl');pl.innerHTML=w.fh.map(function(h,i){return h.f?'<option value="'+i+'">'+h.n+' ('+(h.sp||'mista')+', relação '+h.r+')</option>':'';}).join('');pl.style.display='block';pl.dataset.k='';}};
+var _s7=step;step=function(){var a=$('act').value,n=S.sel?byId(S.sel):null;if((a==='marry'||a==='child')&&n&&(n.wd||n.fol&&n.fan>0&&n.a0)){msg('Seu protegido é como família. Escolha outra pessoa.');return;}_s7();};
+var EZ={x:'Zelo excessivo'};
+var _tk4=tick;tick=function(){_tk4();var m=S.me,w=W();
+ S.npcs.forEach(function(p){if(p.dead)return;if(p.wd){p.help+=(m.orf||0)*.8;p.age=Math.floor(p.a0+(S.week-p.ad)/52);if(p.age>=18&&!p.gr){w.gq=w.gq||[];w.gq.push(p.id);}}if(p.fol){m.m+=Math.ceil(p.fan/25);if(p.fan>=70&&rnd()<.01){w.zq=w.zq||[];w.zq.push(p.id);}}});
+ if(m.orf){m.m=Math.max(0,m.m-m.orf*5);if(S.week%12===0&&S.npcs.filter(function(p){return p.wd;}).length<4+m.orf*2)mkWard(1);}
+ w.fh.forEach(function(h){if(h.pt){m.m+=6+h.p;if(rnd()<.05)m.ht=(m.ht||0)+1;}h.r=Math.max(-100,Math.min(100,h.r+(rnd()<.05?ri(-3,3):0)));});
+ m.m+=eqv('m');m.h=Math.min(100,m.h+eqv('h'));m.en=Math.min(100,m.en+eqv('en'));if(eqv('f')&&S.week%8===0)fa(1);
+ if(S.week%20===7){w.hq=1;}
+ if(!pend&&!XP&&!S.cb&&!S.over){
+  if(w.gq&&w.gq.length){var p=byId(w.gq.shift());if(p&&!p.dead){pend=growEv(p);return;}}
+  if(w.zq&&w.zq.length){var z=byId(w.zq.shift());if(z&&!z.dead){pend={x:'Zelo de '+z.n,d:z.n+', devoto a você, tomou a frente e atacou um rival seu.',o:[ob('Aprovar o zelo',function(){z.fan=Math.min(100,z.fan+5);m.ht=(m.ht||0)+1;fa(1);lg('Você aprovou o zelo de '+z.n+'.');}),ob('Repreender',function(){z.fan-=10;w.md=Math.min(100,w.md+2);lg('Você repreendeu '+z.n+'.');}),ob('Enviar numa missão (+40)',function(){m.m+=40;lg(z.n+' cumpriu a missão com devoção.');})]};return;}}
+  if(w.hq){w.hq=0;var ks=w.fh.map(function(h,i){return i;}).filter(function(i){return w.fh[i].f;}),a=pk(ks),b=pk(ks);if(a!==b){var A=w.fh[a],B=w.fh[b];pend={x:'Conflito: '+A.n+' contra '+B.n,d:'As casas disputam território. Laço atual: '+fxr(a,b)+'.',o:[ob('Apoiar a '+A.n,function(){A.r+=12;B.r-=12;fxa(a,b,-10);}),ob('Apoiar a '+B.n,function(){B.r+=12;A.r-=12;fxa(a,b,-10);}),ob('Mediar (30)',function(){if(m.m<30)return;lm(30);fa(2);fxa(a,b,15);A.r+=3;B.r+=3;}),ob('Vender armas a ambas (+60)',function(){m.m+=60;m.ht=(m.ht||0)+1;lg('Você lucrou com o conflito.');})]};}}}};
+var _dr4=draw;draw=function(){_dr4();var m=S.me,ws=S.npcs.filter(function(p){return(p.wd||p.fol)&&!p.dead;}),h='';
+ if((m.rq||[]).length)h+='<h2 style="margin-top:10px">Relíquias</h2>'+m.rq.map(function(r){return'<div class="kv"><span>'+r.n+'</span><span>'+r.d+'</span></div>';}).join('');
+ if(ws.length)h+='<h2 style="margin-top:10px">Protegidos e devotos</h2>'+ws.map(function(p){return'<div class="kv"><span>'+p.n+(p.fol?' (serve você)':' ('+p.age+' anos)')+'</span><span>'+(p.fol?'devoção '+p.fan:'ajuda '+Math.round(p.help))+'</span></div>';}).join('');
+ if(h)$('me').insertAdjacentHTML('beforeend',h);};
+
 (function(){var ok=0;try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&o.me&&o.npcs){S=o;ok=1;}}}catch(e){}$("bz").innerHTML=Object.keys(BZ).map(function(k){return'<option value="'+k+'">'+k+' (custo '+BZ[k].c+(BZ[k].q?', exige '+TG[BZ[k].q]:'')+')</option>';}).join("");initActs();if(!ok)newGame();draw();})();
 </script>
 </body>
