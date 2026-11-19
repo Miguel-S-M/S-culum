@@ -503,7 +503,7 @@ function npcStep(){
   S.npcs.forEach(function(p){
     if(p.dead)return;
     if(p.job!=="Criança")p.w=Math.max(0,p.w+ri(-3,Math.round(JOBS[p.job]/2)));
-    p.fr=p.fr||[];p.ri=p.ri||[];p.mem=p.mem||[];ng(p);var mx=SP[p.sp].max;
+    p.fr=p.fr||[];p.ri=p.ri||[];p.mem=p.mem||[];ng(p);npcLife(p);var mx=SP[p.sp].max;
     if(p.age>mx*.7&&rnd()<(p.age-mx*.7)/(mx*.6)*.02){p.dead=1;lg(p.n+" morreu aos "+p.age+" anos.");if(p.sx==="me")S.me.sx=null;if(p.sx){var q0=byId(p.sx);if(q0)q0.sx=null;}p.sx=null;return;}
     if(!p.sx&&p.age>=18&&rnd()<.01){
       var c=S.npcs.filter(function(q){return!q.dead&&!q.sx&&q.id!==p.id&&q.age>=18&&Math.abs(q.age-p.age)<15;});
@@ -512,6 +512,36 @@ function npcStep(){
       var k=mk(0);k.job="Criança";S.npcs.push(k);lg(p.n+" teve um filho: "+k.n+".");
     }
   });
+}
+var PLN={riqueza:'Expandir os negócios e juntar capital',aventura:'Fazer fama como aventureiro',família:'Formar e sustentar uma família',estudo:'Escrever um tratado e formar discípulos'};
+function nlg(p,x){if(p.rel>=20||p.kn||rnd()<.3)lg(x);}
+function nsit(p){var h=p.hu||0;return h>=4?'passando necessidade':p.w<20?'apertado':(p.fr||[]).length?'estável, com amigos':'estável, mas sozinho';}
+function nplan(p){return PLN[gl(p)]+' ('+Math.min(100,Math.round(p.pg||0))+'%)';}
+function npcLife(p){
+ if(p.age<16||p.dead)return;
+ var g=gl(p),fr=p.fr||[],rv=p.ri||[];
+ // necessidade física: sem dinheiro, passa fome e age para sair do aperto
+ if(p.w<10&&p.job!=="Criança")p.hu=(p.hu||0)+1;else p.hu=0;
+ if(p.hu>=5&&rnd()<.15){
+  var ami=fr.map(byId).filter(function(q){return q&&!q.dead&&q.w>60;});
+  if(ami.length){var b=pk(ami);b.w-=15;p.w+=15;p.hu=0;rm(p,'Foi ajudado por '+b.n+' num momento difícil.');rm(b,'Ajudou '+p.n+' que passava necessidade.');nlg(p,b.n+' ajudou '+p.n+', que passava necessidade.');}
+  else{var bj=JN.slice().sort(function(a,c){return JOBS[c]-JOBS[a];})[ri(0,3)];if(bj!==p.job){p.job=bj;p.w+=10;p.hu=0;rm(p,'Mudou de ofício por necessidade.');nlg(p,p.n+' trocou de ofício por necessidade e virou '+bj+'.');}}
+ }
+ // necessidade social: quem não tem amigos procura companhia
+ if(!fr.length&&rnd()<.02){var c=S.npcs.filter(function(q){return!q.dead&&q.id!==p.id&&q.age>=16&&(q.fr||[]).indexOf(p.id)<0&&rv.indexOf(q.id)<0;});if(c.length){var q=pk(c);p.fr=p.fr||[];q.fr=q.fr||[];p.fr.push(q.id);q.fr.push(p.id);rm(p,'Fez amizade com '+q.n+'.');nlg(p,p.n+' procurou companhia e fez amizade com '+q.n+'.');}}
+ // objetivo de família: quem sonha com isso procura um cônjuge de verdade
+ if(g==='família'&&!p.sx&&p.age>=18&&rnd()<.04){var cs=S.npcs.filter(function(q){return!q.dead&&!q.sx&&q.id!==p.id&&q.age>=18&&Math.abs(q.age-p.age)<12&&q.sp===p.sp;});if(cs.length){var s=pk(cs);p.sx=s.id;s.sx=p.id;rm(p,'Casou-se com '+s.n+'.');rm(s,'Casou-se com '+p.n+'.');nlg(p,p.n+' e '+s.n+' se casaram.');}}
+ // plano de longo prazo: avança toda semana e rende um marco ao completar
+ p.pg=(p.pg||0)+(p.hu>=4?.3:.9)+(p.t[0]>70?.4:0);
+ if(p.pg>=100){
+  p.pg=0;
+  if(g==='riqueza'){p.w+=25;p.bz=1;p.bg=p.bg||hot();rm(p,'Expandiu os negócios.');nlg(p,p.n+' expandiu os negócios e enriqueceu.');}
+  else if(g==='aventura'){var ok=rnd()<.7;p.w+=ok?35:-20;rm(p,ok?'Voltou rico de uma expedição.':'Perdeu dinheiro numa expedição fracassada.');nlg(p,p.n+(ok?' voltou rico de uma expedição.':' perdeu dinheiro numa expedição fracassada.'));}
+  else if(g==='família'){if(p.sx&&p.sx!=='me'&&p.age<(SP[p.sp].max*.5)&&alive()<50&&p.id<p.sx&&rnd()<.5){var k=mk(0);k.job='Criança';S.npcs.push(k);rm(p,'Teve um filho: '+k.n+'.');nlg(p,p.n+' teve um filho: '+k.n+'.');}else{p.w+=8;rm(p,'Dedicou-se à família.');}}
+  else{p.job='Estudioso';p.w+=10;rm(p,'Escreveu um tratado.');nlg(p,p.n+' escreveu um tratado e ganhou respeito entre os estudiosos.');}
+ }
+ // rivalidades: o rival mais rico às vezes prejudica o outro
+ if(rv.length&&rnd()<.015){var r=byId(pk(rv));if(r&&!r.dead&&r.w>p.w){p.w=Math.max(0,p.w-8);rm(p,'Foi prejudicado por seu rival '+r.n+'.');nlg(p,r.n+' prejudicou o rival '+p.n+' nos negócios.');}}
 }
 function npcR(){var a=S.npcs.filter(function(p){return!p.dead&&p.age>=16;});return a.length?pk(a):null;}
 var EVS=[
@@ -532,7 +562,7 @@ function draw(){
   var l=S.npcs.slice().sort(function(a,b){return a.dead-b.dead||b.rel-a.rel;});
   $("city").innerHTML=l.map(function(p){return'<button class="np'+(S.sel===p.id?" sel":"")+(p.dead?" dead":"")+'" onclick="pick('+p.id+')"><div class="pt" style="background:hsl('+p.hue+',45%,40%)">'+p.n[0]+'</div><div>'+TT[p.nb||0]+p.n+(p.dead?" (falecido)":"")+'<small>'+p.job+', '+p.age+' anos</small></div><span class="r">'+af(p.rel)+' ('+p.rel+')</span></button>';}).join("");
   var n=S.sel?byId(S.sel):null,sp=n&&n.sx?byId(n.sx):null;
-  $("npc").innerHTML=n?'<h2>'+TT[n.nb||0]+n.n+'</h2><div class="kv"><span>Afeto por você</span><span>'+af(n.rel)+' ('+n.rel+')</span></div><div class="bar"><i style="width:'+Math.max(0,Math.min(100,Math.round((n.rel+50)*100/150)))+'%"></i></div><div class="kv"><span>Espécie</span><span>'+n.sp+(n.pf?' (seu filho)':'')+'</span></div><div class="kv"><span>Ofício</span><span>'+n.job+'</span></div><div class="kv"><span>Posses</span><span>'+(n.w<20?"poucas":n.w<60?"remediado":"abastado")+'</span></div><div class="kv"><span>Cônjuge</span><span>'+(n.sx==="me"?"você":sp?sp.n:"ninguém")+'</span></div>'+((n.rel>=20||n.kn)?n.t.map(function(v,i){return'<div class="kv"><span>'+TN[i]+'</span><span>'+lv(v)+'</span></div>';}).join("")+'<div class="kv"><span>Objetivo de vida</span><span>'+gl(n)+(n.bz?', com negócio próprio':'')+'</span></div><div class="kv"><span>Amigos</span><span>'+nm(n.fr)+'</span></div><div class="kv"><span>Rivais</span><span>'+nm(n.ri)+'</span></div>'+((n.mem||[]).length?'<p style="color:var(--mute)">Lembranças: '+n.mem.join(' ')+'</p>':''):'<p style="color:var(--mute)">Você ainda conhece pouco esta pessoa. Passe tempo com ela para saber mais.</p>'):'<h2>Pessoa</h2><p style="color:var(--mute)">Selecione alguém na lista.</p>';
+  $("npc").innerHTML=n?'<h2>'+TT[n.nb||0]+n.n+'</h2><div class="kv"><span>Afeto por você</span><span>'+af(n.rel)+' ('+n.rel+')</span></div><div class="bar"><i style="width:'+Math.max(0,Math.min(100,Math.round((n.rel+50)*100/150)))+'%"></i></div><div class="kv"><span>Espécie</span><span>'+n.sp+(n.pf?' (seu filho)':'')+'</span></div><div class="kv"><span>Ofício</span><span>'+n.job+'</span></div><div class="kv"><span>Posses</span><span>'+(n.w<20?"poucas":n.w<60?"remediado":"abastado")+'</span></div><div class="kv"><span>Cônjuge</span><span>'+(n.sx==="me"?"você":sp?sp.n:"ninguém")+'</span></div>'+((n.rel>=20||n.kn)?n.t.map(function(v,i){return'<div class="kv"><span>'+TN[i]+'</span><span>'+lv(v)+'</span></div>';}).join("")+'<div class="kv"><span>Objetivo de vida</span><span>'+gl(n)+(n.bz?', com negócio próprio':'')+'</span></div><div class="kv"><span>Situação</span><span>'+nsit(n)+'</span></div><div class="kv"><span>Plano</span><span>'+nplan(n)+'</span></div><div class="kv"><span>Amigos</span><span>'+nm(n.fr)+'</span></div><div class="kv"><span>Rivais</span><span>'+nm(n.ri)+'</span></div>'+((n.mem||[]).length?'<p style="color:var(--mute)">Lembranças: '+n.mem.join(' ')+'</p>':''):'<p style="color:var(--mute)">Você ainda conhece pouco esta pessoa. Passe tempo com ela para saber mais.</p>'):'<h2>Pessoa</h2><p style="color:var(--mute)">Selecione alguém na lista.</p>';
   $("log").innerHTML=S.log.slice(0,25).map(function(x){return"<li>"+x+"</li>";}).join("");
   $("ops").innerHTML=S.ops.length?S.ops.map(function(o){var q=qtx(o.job);return'<button class="np'+(S.selJ===o.id?" sel":"")+'" onclick="pj('+o.id+')"><div>'+o.job+' ('+o.pay+' por semana)<small>'+o.en+(q?', exige '+q:'')+(JT[o.job]?', favorece '+TG[JT[o.job]]:'')+'</small></div><span class="r">'+chance(o)+'%</span></button>';}).join(""):'<p style="color:var(--mute)">Nenhuma vaga aberta agora.</p>';
   var kh="";EN.forEach(function(e,i){for(var j=0;j<lvl(i);j++)kh+='<option value="'+i+'-'+j+'">'+SK[i][j][0]+' ('+e+')</option>';});

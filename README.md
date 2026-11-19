@@ -289,6 +289,17 @@ Ação **Comprar edifícios** (Negócios). Cada obra leva 3 semanas. Só dá par
 | Barracão de treino | 350 | +1 treino aleatório por semana |
 | Posto de Guarda | 400 | +1 fama a cada 8 semanas |
 
+## Vida própria dos NPCs
+
+Cada pessoa da vila age por conta própria, mesmo sem você:
+
+- **Necessidades:** quem fica sem dinheiro por muitas semanas passa necessidade. Ela é ajudada por um amigo mais rico ou troca de ofício para um que paga melhor. Quem não tem amigos procura companhia e faz amizade com alguém.
+- **Plano de longo prazo:** cada NPC tem um plano ligado ao objetivo de vida (riqueza, aventura, família ou estudo) que avança toda semana. Ao completar, rende um marco: expandir os negócios, voltar rico (ou arruinado) de uma expedição, ter um filho, ou escrever um tratado. Quem passa necessidade avança mais devagar.
+- **Família:** quem tem o objetivo de família e está solteiro procura um cônjuge da mesma espécie.
+- **Rivalidades:** um rival mais rico às vezes prejudica o outro nos negócios.
+- **Memória:** os acontecimentos entram nas lembranças da pessoa.
+- Na ficha da pessoa (quando você a conhece) aparecem **Situação** e **Plano**. Os acontecimentos aparecem na crônica quando você conhece a pessoa; os demais aparecem só às vezes.
+
 ## Pessoas
 
 - **Socializar, pedir ajuda, presentear, propor parceria, pedir em casamento, ter filhos.** Casamento aparece quando há alguém solteiro, adulto e com afeto 30 ou mais (o pedido exige afeto 50).
