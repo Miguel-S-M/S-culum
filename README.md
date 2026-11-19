@@ -296,8 +296,16 @@ Cada pessoa da vila age por conta própria, mesmo sem você:
 - **Necessidades:** quem fica sem dinheiro por muitas semanas passa necessidade. Ela é ajudada por um amigo mais rico ou troca de ofício para um que paga melhor. Quem não tem amigos procura companhia e faz amizade com alguém.
 - **Plano de longo prazo:** cada NPC tem um plano ligado ao objetivo de vida (riqueza, aventura, família ou estudo) que avança toda semana. Ao completar, rende um marco: expandir os negócios, voltar rico (ou arruinado) de uma expedição, ter um filho, ou escrever um tratado. Quem passa necessidade avança mais devagar.
 - **Família:** quem tem o objetivo de família e está solteiro procura um cônjuge da mesma espécie.
-- **Rivalidades:** um rival mais rico às vezes prejudica o outro nos negócios.
-- **Memória:** os acontecimentos entram nas lembranças da pessoa.
+- **Moradia e saúde:** quem fica muito tempo sem dinheiro perde a casa e só aluga outra quando junta o suficiente. Fome e falta de teto desgastam a saúde, e quem tem dinheiro paga tratamento. Doenças podem aparecer e, sem cuidado, matar.
+- **Pedidos a você:** NPCs com necessidade ou perto de completar o plano pedem sua ajuda: dinheiro, sociedade em negócio, patrocínio de tratado, convite para expedição ou contribuição para um casamento. Cada pedido tem escolhas e consequências.
+- **Boatos:** de vez em quando a vila comenta a situação de alguém na crônica.
+- **Crises e ajuda:** quem passa fome, adoece ou está prestes a perder a casa recebe dinheiro de familiares (cônjuge, pais, filhos) ou amigos mais ricos.
+- **Dívidas:** se ninguém ajuda, a pessoa pega um empréstimo (25) com alguém rico e paga aos poucos quando melhora. Quem não consegue pagar por muito tempo dá o calote e vira rival do credor. A situação aparece como "endividado".
+- **Traços importam:** Lealdade alta faz o NPC ajudar com mais dinheiro e Lealdade baixa o faz recusar com frequência. Ambição alta cobra juros maiores nos empréstimos. Coragem alta escala as brigas mais rápido e Coragem baixa evita o conflito. Curiosidade alta acelera os planos de estudo e aventura.
+- **Você nas disputas:** quando dois rivais estão em guerra aberta, eles pedem seu apoio: você escolhe um lado ou tenta mediar. Quando um credor cobra um devedor, você pode pagar parte da dívida, apoiar o credor ou não se meter.
+- **Chegadas e partidas:** recém-chegados se estabelecem na vila quando ela tem menos de 50 moradores. Quem está sem moradia há muito tempo, sozinho e sem família, pode deixar a vila.
+- **Rivalidades que escalam:** o rival mais rico prejudica o outro nos negócios. Depois de repetidos incidentes vira briga pública (o perdedor perde saúde e dinheiro) e, por fim, a guarda multa os dois ou eles fazem as pazes e viram amigos.
+- **Histórico:** os últimos 8 acontecimentos de cada pessoa ficam na ficha, com a semana, do mais recente ao mais antigo.
 - Na ficha da pessoa (quando você a conhece) aparecem **Situação** e **Plano**. Os acontecimentos aparecem na crônica quando você conhece a pessoa; os demais aparecem só às vezes.
 
 ## Pessoas

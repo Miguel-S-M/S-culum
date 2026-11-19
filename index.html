@@ -293,7 +293,7 @@ function step(){
   m.en+=8;if(m.en<=0)m.h-=5;
   cm();S.week++;S.amb=.6+.8*Math.abs(Math.sin(S.week/9));erec();
   if(S.shT>0){S.shT--;if(!S.shT)S.shock=0;}
-  npcStep();econ();lordChk();kid();if(rnd()<Math.max(.1,.45-(ec().un||0)))newOp();S.ops=S.ops.filter(function(o){return S.week-o.w<10;});
+  npcStep();newcomers();econ();lordChk();kid();if(rnd()<Math.max(.1,.45-(ec().un||0)))newOp();S.ops=S.ops.filter(function(o){return S.week-o.w<10;});
   if(S.week%52===0){S.npcs.forEach(function(p){if(p.dead)return;p.age++;if(p.job==="Criança"&&p.age>=16)p.job=pk(JN);});m.age++;lg("Você fez "+m.age+" anos.");}
   if(m.h<=0)S.over=["Você morreu","A saúde chegou a zero. O mundo continua sem você."];
   else if(m.age>SP[m.sp].max)S.over=["Você morreu de velhice","Uma vida inteira em Aldeburgo chegou ao fim."];
@@ -485,7 +485,7 @@ function succ(id){var o=S.me,p=byId(id);if(!p)return;var pf=p.pf?1:0,fam=pf||o.s
  S.me={n:p.n,sp:sp,age:p.age,cl:o.cl,rg:o.rg,job:job,pay:JOBS[job]||4,ct:fam?o.ct.slice(0,3):[],biz:fam?o.biz:[],m:Math.round(o.m*(fam?.5:.2))+p.w,h:100,en:80,k:ri(0,10),sk:ri(0,10),ap:ap,tr:[0,0,0,0],rev:[0,0,0,0],hue:p.hue,sx:null,fm:Math.round((o.fm||0)/2),ti:pf?(o.ti||0):Math.max(0,(o.ti||0)-1),of:0,pets:fam?(o.pets||[]):[],ad:0,gd:fam?(o.gd||null):null,st:[],rk:0,af:fam?(o.af||[]):[],tq:fam?(o.tq||[]).slice(0,2):[]};
  if(ps){S.me.sx=ps.id;ps.sx='me';}
  if(S.lord==='me'&&!fam)S.lord=0;S.over=null;S.sel=null;S.selJ=null;lg('Você assumiu o legado de '+o.n+' como '+p.n+'.');save();draw();}
-function rm(p,t){p.mem=p.mem||[];p.mem.push(t);if(p.mem.length>4)p.mem.shift();}
+function rm(p,t){p.mem=p.mem||[];p.mem.push('Sem '+(S.week+1)+': '+t);if(p.mem.length>8)p.mem.shift();}
 function nm(a){a=(a||[]).map(byId).filter(function(x){return x&&!x.dead;});return a.length?a.map(function(x){return x.n;}).join(', '):'nenhum';}
 function gl(p){return['riqueza','aventura','família','estudo'][p.t.indexOf(Math.max.apply(null,p.t))];}
 function ng(p){
@@ -514,12 +514,44 @@ function npcStep(){
   });
 }
 var PLN={riqueza:'Expandir os negócios e juntar capital',aventura:'Fazer fama como aventureiro',família:'Formar e sustentar uma família',estudo:'Escrever um tratado e formar discípulos'};
-function nlg(p,x){if(p.rel>=20||p.kn||rnd()<.3)lg(x);}
-function nsit(p){var h=p.hu||0;return h>=4?'passando necessidade':p.w<20?'apertado':(p.fr||[]).length?'estável, com amigos':'estável, mas sozinho';}
+function nlg(p,x){if(p.rel>=20||p.kn||rnd()<.65)lg(x);}
+function takeSides(w,x){var al=kin(x).concat((x.fr||[]).map(byId)).filter(function(a){return a&&!a.dead&&a.id!==w.id&&a.t[2]>50&&(a.ri||[]).indexOf(w.id)<0&&rnd()<.5;}).slice(0,2);al.forEach(function(a){a.ri=a.ri||[];w.ri=w.ri||[];a.ri.push(w.id);w.ri.push(a.id);rm(a,'Tomou o partido de '+x.n+' contra '+w.n+'.');rm(w,a.n+' tomou partido contra ele.');nlg(w,a.n+' tomou o partido de '+x.n+' e passou a rivalizar com '+w.n+'.');});}
+var JF={'Guarda':[1,2],'Mago':[3,1],'Artista Marcial':[1],'Estudioso':[3],'Sacerdote':[2,3],'Curandeiro':[2,3],'Comerciante':[0],'Avaliador':[0,3],'Ferreiro':[1],'Mensageiro':[1],'Agricultor':[2],'Pescador':[3],'Artesão':[3]};
+function jsc(p,j){var s=JOBS[j]*(p.t[0]/50);(JF[j]||[]).forEach(function(i){s+=p.t[i]>65?6:p.t[i]<30?-3:0;});return s;}
+function jobPick(p){if(p.bz||p.job==='Criança'||rnd()>=.006)return;var b=JN.slice().sort(function(a,c){return jsc(p,c)-jsc(p,a);})[0];if(b!==p.job&&jsc(p,b)>jsc(p,p.job)+3){var o=p.job;p.job=b;p.pg=Math.max(0,(p.pg||0)-15);rm(p,'Trocou de ofício: de '+o+' para '+b+'.');nlg(p,p.n+' deixou o ofício de '+o+' para virar '+b+', mais de acordo com seu jeito.');}}
+function kin(p){var o=[];if(p.sx&&p.sx!=='me')o.push(p.sx);(p.pa||[]).forEach(function(i){o.push(i);});S.npcs.forEach(function(q){if(q.pa&&q.pa.indexOf(p.id)>=0)o.push(q.id);});return o.map(byId).filter(function(q){return q&&!q.dead;});}
+function npcHelp(p){var k=kin(p),f=(p.fr||[]).map(byId).filter(function(q){return q&&!q.dead;}),c=k.concat(f).filter(function(q){return q.w>50&&(q.t[2]>=30||rnd()<.4);});if(!c.length)return 0;var b=pk(c),fam=k.indexOf(b)>=0,am=b.t[2]>65?25:15;b.w-=am;p.w+=am;p.hu=0;p.hm=Math.max(0,(p.hm||0)-4);p.sa=Math.min(100,(p.sa||100)+10);rm(p,(fam?'Seu familiar ':'Seu amigo ')+b.n+' ajudou numa crise.');rm(b,'Ajudou '+p.n+' numa crise.');nlg(p,b.n+' ajudou '+(fam?'um familiar, ':'um amigo, ')+p.n+', numa crise.');return 1;}
+function npcLoan(p){if(p.db)return 0;var c=S.npcs.filter(function(q){return!q.dead&&q.id!==p.id&&q.age>=18&&q.w>100;});if(!c.length)return 0;var q=pk(c);p.w+=20;q.w-=20;p.db=q.t[0]>65?35:25;p.cr=q.id;rm(p,'Pegou um empréstimo com '+q.n+'.');rm(q,'Emprestou dinheiro a '+p.n+'.');nlg(p,p.n+' pegou um empréstimo com '+q.n+' para pagar o aluguel.');return 1;}
+function npcDebt(p){if(!p.db)return;var q=byId(p.cr);if(!q||q.dead){p.db=0;return;}
+ if(p.w>=40&&rnd()<.3){var pay=Math.min(p.db,10);p.w-=pay;p.db-=pay;q.w+=pay;if(p.db<=0){p.db=0;rm(p,'Quitou a dívida com '+q.n+'.');nlg(p,p.n+' quitou a dívida com '+q.n+'.');}}
+ else if((p.hm||0)>=14&&rnd()<.05){p.db=0;p.ri=p.ri||[];q.ri=q.ri||[];if(p.ri.indexOf(q.id)<0)p.ri.push(q.id);if(q.ri.indexOf(p.id)<0)q.ri.push(p.id);rm(p,'Não pagou a dívida com '+q.n+'.');rm(q,p.n+' não pagou a dívida.');nlg(p,p.n+' não pagou a dívida e virou rival de '+q.n+'.');}}
+function feud(p,rv){if(!rv.length||rnd()>=.015)return;var r=byId(pk(rv));if(!r||r.dead||r.w<=p.w)return;if(r.t[1]<30&&rnd()<.5)return;p.fe=p.fe||{};var l=(p.fe[r.id]=(p.fe[r.id]||0)+(r.t[1]>65?2:1));
+ if(l<3){p.w=Math.max(0,p.w-8);rm(p,'Foi prejudicado por seu rival '+r.n+'.');nlg(p,r.n+' prejudicou o rival '+p.n+' nos negócios.');}
+ else if(l<5){var pw=(p.t[1]+rnd()*60)>(r.t[1]+rnd()*60),w=pw?p:r,x=pw?r:p;x.sa=(x.sa===undefined?100:x.sa)-20;x.w=Math.max(0,x.w-15);rm(w,'Venceu uma briga com '+x.n+'.');rm(x,'Perdeu uma briga com '+w.n+'.');nlg(p,w.n+' venceu uma briga pública contra '+x.n+'.');takeSides(w,x);}
+ else{p.fe[r.id]=0;if(rnd()<.35){p.ri=(p.ri||[]).filter(function(i){return i!==r.id;});r.ri=(r.ri||[]).filter(function(i){return i!==p.id;});p.fr=p.fr||[];r.fr=r.fr||[];p.fr.push(r.id);r.fr.push(p.id);rm(p,'Fez as pazes com '+r.n+'.');rm(r,'Fez as pazes com '+p.n+'.');nlg(p,p.n+' e '+r.n+' fizeram as pazes.');}else{p.w=Math.max(0,p.w-20);r.w=Math.max(0,r.w-20);rm(p,'Foi multado pela guarda por brigar com '+r.n+'.');rm(r,'Foi multado pela guarda por brigar com '+p.n+'.');nlg(p,'A guarda multou '+p.n+' e '+r.n+' por brigas.');}}}
+function npcNeeds(p){
+ if(p.sa===undefined){p.sa=100;p.ho=1;p.hm=0;}
+ // moradia: sem dinheiro por muito tempo, perde a casa; com dinheiro, aluga outra
+ if(p.w<15&&p.job!=='Criança')p.hm++;else if(p.w>=30)p.hm=0;
+ if(!p.ho&&p.hm>=14&&!p.sx&&!kin(p).length&&rnd()<.08){p.dead=1;p.gone=1;rm(p,'Deixou a vila.');nlg(p,p.n+' deixou a vila em busca de uma vida melhor.');return 1;}
+ if(p.ho&&p.hm>=10){p.ho=0;rm(p,'Perdeu a moradia.');nlg(p,p.n+' perdeu a moradia por falta de dinheiro.');}
+ else if(!p.ho&&p.w>=30){p.ho=1;rm(p,'Alugou uma casa.');nlg(p,p.n+' conseguiu alugar uma casa.');}
+ if((p.hu>=5||p.sa<40||p.hm>=8)&&rnd()<.2){if(!npcHelp(p)&&p.hm>=6)npcLoan(p);}
+ npcDebt(p);
+ // saúde: fome e falta de teto adoecem; dinheiro permite tratamento
+ if(p.hu>=3||!p.ho)p.sa-=(p.ho?2:3);else if(p.sa<100)p.sa+=1;
+ if(rnd()<.004){p.sa-=30;rm(p,'Adoeceu.');nlg(p,p.n+' adoeceu.');}
+ if(p.sa<60&&p.w>=25&&rnd()<.2){p.w-=10;p.sa=Math.min(100,p.sa+35);rm(p,'Pagou um tratamento e melhorou.');nlg(p,p.n+' pagou um tratamento e melhorou.');}
+ if(p.sa<=0){p.dead=1;lg(p.n+' morreu de doença e miséria.');if(p.sx==='me')S.me.sx=null;if(p.sx){var q0=byId(p.sx);if(q0)q0.sx=null;}p.sx=null;return 1;}
+ // boato: a vila comenta a situação de alguém
+ if(rnd()<.003){lg('Corre o boato de que '+p.n+' está '+nsit(p)+'.');}
+ return 0;
+}
+function nsit(p){var h=p.hu||0;if(p.sa<40)return'doente';if(p.ho===0)return'sem moradia';if(p.db>0)return'endividado';return h>=4?'passando necessidade':p.w<20?'apertado':(p.fr||[]).length?'estável, com amigos':'estável, mas sozinho';}
 function nplan(p){return PLN[gl(p)]+' ('+Math.min(100,Math.round(p.pg||0))+'%)';}
 function npcLife(p){
  if(p.age<16||p.dead)return;
- var g=gl(p),fr=p.fr||[],rv=p.ri||[];
+ var g=gl(p),fr=p.fr||[],rv=p.ri||[];if(npcNeeds(p))return;
  // necessidade física: sem dinheiro, passa fome e age para sair do aperto
  if(p.w<10&&p.job!=="Criança")p.hu=(p.hu||0)+1;else p.hu=0;
  if(p.hu>=5&&rnd()<.15){
@@ -531,20 +563,34 @@ function npcLife(p){
  if(!fr.length&&rnd()<.02){var c=S.npcs.filter(function(q){return!q.dead&&q.id!==p.id&&q.age>=16&&(q.fr||[]).indexOf(p.id)<0&&rv.indexOf(q.id)<0;});if(c.length){var q=pk(c);p.fr=p.fr||[];q.fr=q.fr||[];p.fr.push(q.id);q.fr.push(p.id);rm(p,'Fez amizade com '+q.n+'.');nlg(p,p.n+' procurou companhia e fez amizade com '+q.n+'.');}}
  // objetivo de família: quem sonha com isso procura um cônjuge de verdade
  if(g==='família'&&!p.sx&&p.age>=18&&rnd()<.04){var cs=S.npcs.filter(function(q){return!q.dead&&!q.sx&&q.id!==p.id&&q.age>=18&&Math.abs(q.age-p.age)<12&&q.sp===p.sp;});if(cs.length){var s=pk(cs);p.sx=s.id;s.sx=p.id;rm(p,'Casou-se com '+s.n+'.');rm(s,'Casou-se com '+p.n+'.');nlg(p,p.n+' e '+s.n+' se casaram.');}}
+ jobPick(p);
  // plano de longo prazo: avança toda semana e rende um marco ao completar
- p.pg=(p.pg||0)+(p.hu>=4?.3:.9)+(p.t[0]>70?.4:0);
+ p.pg=(p.pg||0)+(p.hu>=4||!p.ho||p.sa<40?.3:.9)+(p.t[0]>70?.4:0)+(p.t[3]>65&&(g==='estudo'||g==='aventura')?.3:0);
  if(p.pg>=100){
   p.pg=0;
-  if(g==='riqueza'){p.w+=25;p.bz=1;p.bg=p.bg||hot();rm(p,'Expandiu os negócios.');nlg(p,p.n+' expandiu os negócios e enriqueceu.');}
+  if(g==='riqueza'){var vr=rnd();if(vr<.6){p.w+=25;p.bz=1;p.bg=p.bg||hot();rm(p,'Expandiu os negócios.');nlg(p,p.n+' expandiu os negócios e enriqueceu.');}else if(vr<.85){p.w+=40;rm(p,'Fechou um grande contrato.');nlg(p,p.n+' fechou um grande contrato.');}else{p.w=Math.max(0,p.w-20);rm(p,'Perdeu dinheiro num mau negócio.');nlg(p,p.n+' perdeu dinheiro num mau negócio.');}}
+  else if(g==='aventura'&&rnd()<.1){p.w+=70;rm(p,'Encontrou um tesouro.');nlg(p,p.n+' encontrou um tesouro numa expedição.');}
   else if(g==='aventura'){var ok=rnd()<.7;p.w+=ok?35:-20;rm(p,ok?'Voltou rico de uma expedição.':'Perdeu dinheiro numa expedição fracassada.');nlg(p,p.n+(ok?' voltou rico de uma expedição.':' perdeu dinheiro numa expedição fracassada.'));}
-  else if(g==='família'){if(p.sx&&p.sx!=='me'&&p.age<(SP[p.sp].max*.5)&&alive()<50&&p.id<p.sx&&rnd()<.5){var k=mk(0);k.job='Criança';S.npcs.push(k);rm(p,'Teve um filho: '+k.n+'.');nlg(p,p.n+' teve um filho: '+k.n+'.');}else{p.w+=8;rm(p,'Dedicou-se à família.');}}
+  else if(g==='família'){if(p.sx&&p.sx!=='me'&&p.age<(SP[p.sp].max*.5)&&alive()<50&&p.id<p.sx&&rnd()<.5){var k=mk(0);k.job='Criança';k.pa=[p.id,p.sx];S.npcs.push(k);rm(p,'Teve um filho: '+k.n+'.');nlg(p,p.n+' teve um filho: '+k.n+'.');}else{p.w+=8;rm(p,'Dedicou-se à família.');}}
+  else if(rnd()<.3){p.job='Estudioso';p.w+=15;var di=S.npcs.filter(function(q){return!q.dead&&q.age>=16&&q.id!==p.id&&q.t[3]>55;});if(di.length){var d=pk(di);d.rel+=0;d.t[3]=Math.min(100,d.t[3]+3);rm(d,'Tornou-se discípulo de '+p.n+'.');rm(p,'Abriu uma escola e aceitou '+d.n+' como discípulo.');nlg(p,p.n+' abriu uma escola e aceitou '+d.n+' como discípulo.');}else{rm(p,'Abriu uma escola.');nlg(p,p.n+' abriu uma escola.');}}
   else{p.job='Estudioso';p.w+=10;rm(p,'Escreveu um tratado.');nlg(p,p.n+' escreveu um tratado e ganhou respeito entre os estudiosos.');}
  }
  // rivalidades: o rival mais rico às vezes prejudica o outro
- if(rv.length&&rnd()<.015){var r=byId(pk(rv));if(r&&!r.dead&&r.w>p.w){p.w=Math.max(0,p.w-8);rm(p,'Foi prejudicado por seu rival '+r.n+'.');nlg(p,r.n+' prejudicou o rival '+p.n+' nos negócios.');}}
+ feud(p,rv);
 }
+function newcomers(){if(alive()<50&&rnd()<.04){var k=mk(ri(18,45));k.w=ri(10,40);k.arr=1;rm(k,'Chegou à vila.');lg('Um recém-chegado, '+k.n+' ('+k.job+'), estabeleceu-se na vila.');S.npcs.push(k);}}
 function npcR(){var a=S.npcs.filter(function(p){return!p.dead&&p.age>=16;});return a.length?pk(a):null;}
+function dispSide(X,Y){return function(){X.rel+=8;Y.rel-=6;X.fe=X.fe||{};X.fe[Y.id]=0;Y.w=Math.max(0,Y.w-10);X.w+=10;rm(X,'Você tomou seu partido contra '+Y.n+'.');rm(Y,'Você apoiou '+X.n+' contra ele.');lg('Você apoiou '+X.n+' contra '+Y.n+'.');};}
+function dispMed(A,B){return function(){if(rnd()<.5){A.rel+=4;B.rel+=4;A.ri=(A.ri||[]).filter(function(i){return i!==B.id;});B.ri=(B.ri||[]).filter(function(i){return i!==A.id;});A.fr=A.fr||[];B.fr=B.fr||[];A.fr.push(B.id);B.fr.push(A.id);A.fe={};B.fe={};rm(A,'Você o reconciliou com '+B.n+'.');rm(B,'Você o reconciliou com '+A.n+'.');lg('Você reconciliou '+A.n+' e '+B.n+'.');}else{A.rel-=2;B.rel-=2;S.me.en-=5;lg('Sua mediação entre '+A.n+' e '+B.n+' fracassou.');}};}
 var EVS=[
+function(){var pr=[];S.npcs.forEach(function(p){if(p.dead||!p.fe)return;(p.ri||[]).forEach(function(id){var r=byId(id);if(r&&!r.dead&&p.fe[id]>=2)pr.push([p,r]);});});if(!pr.length)return null;var d=pk(pr),A=d[0],B=d[1];return{x:'Disputa entre '+A.n+' e '+B.n,d:A.n+' e '+B.n+' estão em guerra aberta e cada um pede seu apoio.',o:[{l:'Apoiar '+A.n,f:dispSide(A,B)},{l:'Apoiar '+B.n,f:dispSide(B,A)},{l:'Mediar',f:dispMed(A,B)}]};},
+function(){var a=S.npcs.filter(function(p){var q=byId(p.cr);return!p.dead&&p.db>0&&q&&!q.dead;});if(!a.length)return null;var p=pk(a),q=byId(p.cr),M=S.me;return{x:q.n+' cobra '+p.n,d:q.n+' quer receber os '+p.db+' que '+p.n+' deve e pede seu apoio.',o:[{l:'Pagar parte pelo devedor (15)',f:function(){if(M.m>=15){M.m-=15;p.db=Math.max(0,p.db-15);q.w+=15;p.rel+=8;q.rel+=3;rm(p,'Você pagou parte da dívida dele.');lg('Você pagou parte da dívida de '+p.n+'.');}else lg('Faltou dinheiro para ajudar '+p.n+'.');}},{l:'Apoiar o credor',f:function(){q.rel+=6;p.rel-=6;p.w=Math.max(0,p.w-10);q.w+=10;p.db=Math.max(0,p.db-10);rm(p,'Você apoiou a cobrança de '+q.n+'.');lg('Você apoiou '+q.n+' na cobrança a '+p.n+'.');}},{l:'Não se meter',f:function(){lg('Você não se meteu na cobrança.');}}]};},
+function(){var a=S.npcs.filter(function(p){return!p.dead&&p.age>=16&&p.sx!=='me'&&(p.hu>=4||p.ho===0||p.pg>=50);});if(!a.length)return null;var p=pk(a),g=gl(p),M=S.me;
+ if(p.hu>=4||p.ho===0)return{x:'Pedido de ajuda de '+p.n,d:p.n+' está '+nsit(p)+' e pede sua ajuda (20).',o:[{l:'Ajudar (20)',f:function(){if(M.m>=20){M.m-=20;p.w+=20;p.hu=0;p.rel+=10;rm(p,'Foi ajudado por você.');lg('Você ajudou '+p.n+'.');}else lg('Faltou dinheiro para ajudar '+p.n+'.');}},{l:'Recusar',f:function(){p.rel-=4;rm(p,'Você recusou ajudar.');lg('Você recusou ajudar '+p.n+'.');}}]};
+ if(g==='riqueza')return{x:p.n+' procura um sócio',d:p.n+' quer expandir os negócios e pede um investimento de 40.',o:[{l:'Investir (40)',f:function(){if(M.m>=40){M.m-=40;p.pg+=25;p.rel+=6;if(rnd()<.65){M.m+=75;lg('O investimento em '+p.n+' deu retorno.');}else lg('O investimento em '+p.n+' deu errado.');}else lg('Faltou dinheiro para investir.');}},{l:'Recusar',f:function(){p.rel-=2;}}]};
+ if(g==='estudo')return{x:p.n+' quer escrever um tratado',d:p.n+' pede 25 para financiar a pesquisa em troca de seu nome na obra.',o:[{l:'Patrocinar (25)',f:function(){if(M.m>=25){M.m-=25;p.pg=100;p.rel+=8;fa(3);lg('Você patrocinou o tratado de '+p.n+'.');}else lg('Faltou dinheiro.');}},{l:'Recusar',f:function(){p.rel-=2;}}]};
+ if(g==='aventura')return{x:p.n+' convida para uma expedição',d:p.n+' quer que você acompanhe uma expedição perigosa.',o:[{l:'Participar',f:function(){M.en-=15;p.rel+=6;p.pg+=25;if(rnd()<.65){M.m+=50;lg('A expedição com '+p.n+' rendeu 50.');}else{M.h-=10;lg('A expedição com '+p.n+' deu errado e você se feriu.');}}},{l:'Recusar',f:function(){p.rel-=2;}}]};
+ return{x:p.n+' pede ajuda no casamento',d:p.n+' pede 15 para a festa de casamento.',o:[{l:'Contribuir (15)',f:function(){if(M.m>=15){M.m-=15;p.rel+=8;lg('Você contribuiu com a festa de '+p.n+'.');}else lg('Faltou dinheiro.');}},{l:'Recusar',f:function(){p.rel-=2;}}]};},
 function(){var p=npcR(),j=pk(JN);if(!p||!qok(j))return null;return{x:"Proposta de "+p.n,d:p.n+" oferece uma vaga de "+j+" (base de "+JOBS[j]+" por semana). Você perderia parte da experiência atual.",o:[{l:"Aceitar",f:function(){S.me.job=j;S.me.pay=JOBS[j];S.me.sk=0;S.me.rk=0;lg("Mudou de ofício para "+j+".");}},{l:"Recusar",f:function(){p.rel-=2;lg("Recusou a proposta de "+p.n+".");}}]};},
 function(){return{x:"Febre na vila",d:"Você acordou com febre alta.",o:[{l:"Pagar um curandeiro (10)",f:function(){if(S.me.m>=10){S.me.m-=10;S.me.h+=5;lg("Foi tratado pelo curandeiro.");}else{S.me.h-=15;lg("Sem dinheiro, a febre castigou.");}}},{l:"Descansar em casa",f:function(){S.me.h-=12;S.me.en+=10;lg("Enfrentou a febre sozinho.");}}]};},
 function(){return{x:"Colheita ruim",d:"A comida vai ficar mais cara por algumas semanas.",o:[{l:"Pagar mais caro (12)",f:function(){S.shock=1;S.shT=8;S.me.m=Math.max(0,S.me.m-12);lg("A comida encareceu.");}},{l:"Comer menos",f:function(){S.shock=1;S.shT=8;S.me.h-=5;S.me.en-=5;lg("A comida encareceu e você passou apertado.");}}]};},
@@ -562,7 +608,7 @@ function draw(){
   var l=S.npcs.slice().sort(function(a,b){return a.dead-b.dead||b.rel-a.rel;});
   $("city").innerHTML=l.map(function(p){return'<button class="np'+(S.sel===p.id?" sel":"")+(p.dead?" dead":"")+'" onclick="pick('+p.id+')"><div class="pt" style="background:hsl('+p.hue+',45%,40%)">'+p.n[0]+'</div><div>'+TT[p.nb||0]+p.n+(p.dead?" (falecido)":"")+'<small>'+p.job+', '+p.age+' anos</small></div><span class="r">'+af(p.rel)+' ('+p.rel+')</span></button>';}).join("");
   var n=S.sel?byId(S.sel):null,sp=n&&n.sx?byId(n.sx):null;
-  $("npc").innerHTML=n?'<h2>'+TT[n.nb||0]+n.n+'</h2><div class="kv"><span>Afeto por você</span><span>'+af(n.rel)+' ('+n.rel+')</span></div><div class="bar"><i style="width:'+Math.max(0,Math.min(100,Math.round((n.rel+50)*100/150)))+'%"></i></div><div class="kv"><span>Espécie</span><span>'+n.sp+(n.pf?' (seu filho)':'')+'</span></div><div class="kv"><span>Ofício</span><span>'+n.job+'</span></div><div class="kv"><span>Posses</span><span>'+(n.w<20?"poucas":n.w<60?"remediado":"abastado")+'</span></div><div class="kv"><span>Cônjuge</span><span>'+(n.sx==="me"?"você":sp?sp.n:"ninguém")+'</span></div>'+((n.rel>=20||n.kn)?n.t.map(function(v,i){return'<div class="kv"><span>'+TN[i]+'</span><span>'+lv(v)+'</span></div>';}).join("")+'<div class="kv"><span>Objetivo de vida</span><span>'+gl(n)+(n.bz?', com negócio próprio':'')+'</span></div><div class="kv"><span>Situação</span><span>'+nsit(n)+'</span></div><div class="kv"><span>Plano</span><span>'+nplan(n)+'</span></div><div class="kv"><span>Amigos</span><span>'+nm(n.fr)+'</span></div><div class="kv"><span>Rivais</span><span>'+nm(n.ri)+'</span></div>'+((n.mem||[]).length?'<p style="color:var(--mute)">Lembranças: '+n.mem.join(' ')+'</p>':''):'<p style="color:var(--mute)">Você ainda conhece pouco esta pessoa. Passe tempo com ela para saber mais.</p>'):'<h2>Pessoa</h2><p style="color:var(--mute)">Selecione alguém na lista.</p>';
+  $("npc").innerHTML=n?'<h2>'+TT[n.nb||0]+n.n+'</h2><div class="kv"><span>Afeto por você</span><span>'+af(n.rel)+' ('+n.rel+')</span></div><div class="bar"><i style="width:'+Math.max(0,Math.min(100,Math.round((n.rel+50)*100/150)))+'%"></i></div><div class="kv"><span>Espécie</span><span>'+n.sp+(n.pf?' (seu filho)':'')+'</span></div><div class="kv"><span>Ofício</span><span>'+n.job+'</span></div><div class="kv"><span>Posses</span><span>'+(n.w<20?"poucas":n.w<60?"remediado":"abastado")+'</span></div><div class="kv"><span>Cônjuge</span><span>'+(n.sx==="me"?"você":sp?sp.n:"ninguém")+'</span></div>'+((n.rel>=20||n.kn)?n.t.map(function(v,i){return'<div class="kv"><span>'+TN[i]+'</span><span>'+lv(v)+'</span></div>';}).join("")+'<div class="kv"><span>Objetivo de vida</span><span>'+gl(n)+(n.bz?', com negócio próprio':'')+'</span></div><div class="kv"><span>Situação</span><span>'+nsit(n)+'</span></div><div class="kv"><span>Plano</span><span>'+nplan(n)+'</span></div><div class="kv"><span>Amigos</span><span>'+nm(n.fr)+'</span></div><div class="kv"><span>Rivais</span><span>'+nm(n.ri)+'</span></div>'+((n.mem||[]).length?'<p style="color:var(--mute)">Histórico:<br>'+n.mem.slice().reverse().join('<br>')+'</p>':''):'<p style="color:var(--mute)">Você ainda conhece pouco esta pessoa. Passe tempo com ela para saber mais.</p>'):'<h2>Pessoa</h2><p style="color:var(--mute)">Selecione alguém na lista.</p>';
   $("log").innerHTML=S.log.slice(0,25).map(function(x){return"<li>"+x+"</li>";}).join("");
   $("ops").innerHTML=S.ops.length?S.ops.map(function(o){var q=qtx(o.job);return'<button class="np'+(S.selJ===o.id?" sel":"")+'" onclick="pj('+o.id+')"><div>'+o.job+' ('+o.pay+' por semana)<small>'+o.en+(q?', exige '+q:'')+(JT[o.job]?', favorece '+TG[JT[o.job]]:'')+'</small></div><span class="r">'+chance(o)+'%</span></button>';}).join(""):'<p style="color:var(--mute)">Nenhuma vaga aberta agora.</p>';
   var kh="";EN.forEach(function(e,i){for(var j=0;j<lvl(i);j++)kh+='<option value="'+i+'-'+j+'">'+SK[i][j][0]+' ('+e+')</option>';});
