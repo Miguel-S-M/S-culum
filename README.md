@@ -289,6 +289,18 @@ Ação **Comprar edifícios** (Negócios). Cada obra leva 3 semanas. Só dá par
 | Barracão de treino | 350 | +1 treino aleatório por semana |
 | Posto de Guarda | 400 | +1 fama a cada 8 semanas |
 
+## Economia: estações, colheita, guerra e custo de vida
+
+A economia já tinha 4 mercados (comida, ferramentas, luxo e remédios) com preços por oferta e demanda. Agora há mais camadas por cima:
+
+- **Estações:** a comida é mais barata no outono (x0,85) e mais cara no inverno (x1,2). Os remédios sobem no inverno (x1,25), e o luxo sobe no verão e cai no inverno. Ferramentas variam pouco.
+- **Colheita anual:** no começo do outono sorteia-se se a colheita foi ruim (20%, comida x1,3), farta (20%, comida x0,85) ou normal, valendo até o outono seguinte.
+- **Guerra:** com algum reino em guerra com você, ferramentas ficam 25% mais caras, remédios 15% e comida 10%. O luxo cai 10%.
+- **Salários dos NPCs:** acompanham o preço do mercado do seu ofício. Ofícios sem mercado próprio (guarda, estudioso, mago etc.) acompanham o custo de vida geral.
+- **Custo de vida dos NPCs:** toda semana cada adulto paga comida, aluguel (se tem moradia) e 1% do que possui (o padrão de vida sobe com a riqueza). Isso freia o acúmulo: a riqueza média se estabiliza em vez de crescer sem parar. Aposentados pagam 70%.
+- **Tratamento e moradia:** o preço do tratamento acompanha o preço dos remédios, e o limite de dinheiro para perder ou alugar uma moradia acompanha o custo de vida.
+- O painel **Economia** mostra os preços atuais já com esses efeitos, a estação, a colheita, a guerra, o custo de vida semanal e o preço do tratamento.
+
 ## Vida própria dos NPCs
 
 Cada pessoa da vila age por conta própria, mesmo sem você:
@@ -304,9 +316,37 @@ Cada pessoa da vila age por conta própria, mesmo sem você:
 - **Traços importam:** Lealdade alta faz o NPC ajudar com mais dinheiro e Lealdade baixa o faz recusar com frequência. Ambição alta cobra juros maiores nos empréstimos. Coragem alta escala as brigas mais rápido e Coragem baixa evita o conflito. Curiosidade alta acelera os planos de estudo e aventura.
 - **Você nas disputas:** quando dois rivais estão em guerra aberta, eles pedem seu apoio: você escolhe um lado ou tenta mediar. Quando um credor cobra um devedor, você pode pagar parte da dívida, apoiar o credor ou não se meter.
 - **Chegadas e partidas:** recém-chegados se estabelecem na vila quando ela tem menos de 50 moradores. Quem está sem moradia há muito tempo, sozinho e sem família, pode deixar a vila.
+- **Partido nas brigas:** quando alguém perde uma briga pública, até 2 familiares ou amigos leais (Lealdade acima de 50) podem tomar seu partido e passar a rivalizar com o vencedor.
+- **Troca de ofício por escolha:** de vez em quando o NPC avalia qual ofício combina mais com seus traços (Ambição pesa o salário; Coragem, Lealdade e Curiosidade favorecem ofícios como Guarda, Sacerdote ou Estudioso) e troca se a diferença valer a pena.
+- **Marcos de plano com variedade:** riqueza pode render expansão, grande contrato ou prejuízo; aventura pode render expedição bem-sucedida, fracasso ou tesouro; estudo pode render um tratado ou uma escola com discípulo.
+- **Intensidade do mundo:** o botão "Mundo" no topo alterna entre calmo, normal e turbulento. Calmo reduz pela metade a frequência de doenças, brigas, calotes e partidas e ajuda um pouco o dinheiro dos NPCs. Turbulento quase dobra essas frequências e drena um pouco o dinheiro. A escolha fica salva no jogo.
+- **Aposentadoria e herança:** NPCs idosos (a partir de 70% da expectativa de vida da espécie) se aposentam, deixam de receber salário e passam parte dos bens e o negócio a um filho adulto, ao cônjuge ou a um discípulo. Quando um NPC morre, a herança (60% das posses e o negócio) vai para os mesmos herdeiros. Quem parte da vila aparece como "partiu da vila", e não como falecido.
+- **Pessoas notáveis:** um painel mostra os 3 mais ricos, os 3 mais queridos por você e os 3 mais populares (amigos e família), com clique para abrir a ficha.
+- **Convites jogáveis (duram cerca de 5 semanas):**
+  - **Casamentos:** vá com presente (20), de mãos vazias ou falte.
+  - **Funerais:** ajude a família (10), só compareça ou falte.
+  - **Batizados:** seja padrinho (20), só compareça ou falte. Ser padrinho aumenta o afeto dos pais e da criança por você.
+  - **Aniversários de idosos queridos:** leve um presente (10), visite ou falte.
+  - **Julgamentos de briga:** quando a guarda multa dois rivais, você pode defender um deles (ele recupera a multa e o outro perde afeto por você) ou pedir clemência para os dois, com 50% de chance de perdoar as multas.
+  - **Festa de cada estação:** contribua (15), só participe ou fique em casa. Se você for adulto e solteiro, há também a opção de se aproximar de alguém solteiro de idade parecida, o que aumenta o afeto dessa pessoa (o pedido de casamento exige afeto 50+).
+- **Relatório do mundo:** um painel mostra a população, a riqueza média e mediana, a porcentagem de NPCs passando necessidade, sem moradia, endividados, doentes e aposentados, as rivalidades ativas e os acontecimentos do ano atual e do anterior (doenças, brigas, empréstimos, calotes, partidas, heranças). Quando algo foge do normal, ele sugere ajustar a intensidade do mundo.
+- **Teto de população e ritmo:** os botões "População" (pequena 40, média 60, grande 90) e "Ritmo" (lento, normal, rápido) controlam quantos moradores a vila comporta e a velocidade dos nascimentos e das chegadas de forasteiros. O Relatório do mundo mostra os valores atuais e avisa quando a vila está no teto ou com menos da metade dele. As escolhas ficam salvas no jogo.
 - **Rivalidades que escalam:** o rival mais rico prejudica o outro nos negócios. Depois de repetidos incidentes vira briga pública (o perdedor perde saúde e dinheiro) e, por fim, a guarda multa os dois ou eles fazem as pazes e viram amigos.
 - **Histórico:** os últimos 8 acontecimentos de cada pessoa ficam na ficha, com a semana, do mais recente ao mais antigo.
 - Na ficha da pessoa (quando você a conhece) aparecem **Situação** e **Plano**. Os acontecimentos aparecem na crônica quando você conhece a pessoa; os demais aparecem só às vezes.
+
+## Status e cards de conquista
+
+- **Área "Status"** (abaixo da ficha do personagem), com 6 abas:
+  - **Habilidades:** as 4 energias (Ki, Mana, Espiritual, Vital) com nível, energia máxima, as 5 habilidades de cada uma (perícia que dá e poder de combate), e as bloqueadas com o nível que as libera.
+  - **Bônus:** dano em combate, dano recebido, renda dos caminhos, sustento dos companheiros e energias máximas com o multiplicador da espécie.
+  - **Passivas:** o efeito de cada uma e, nas que você ainda não tem, o progresso até desbloquear.
+  - **Artefatos:** os que você tem e o que cada um faz. Os que faltam aparecem só como uma contagem.
+  - **Companheiros:** bônus de dano, consumo de comida e efeitos especiais (como o Dragão).
+  - **Caminhos:** bônus e poderes de cada caminho escolhido.
+- **Card de conquista**, no estilo dos jogos de sobrevivência: ao ganhar uma habilidade, passiva, artefato, companheiro ou caminho, aparece um card com ícone, nome, tipo e os efeitos embaixo. Há quatro cores de raridade, e artefatos são os mais raros. Enter ou espaço passam para o próximo card, e o tempo automático pausa enquanto há card aberto.
+- Os ícones são emojis sobre um fundo colorido gerado a partir do nome. Para usar imagens próprias, basta trocar a função `icon`.
+- Em saves antigos, o que você já tinha não gera card: só o que for conquistado a partir de agora.
 
 ## Pessoas
 

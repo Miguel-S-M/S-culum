@@ -44,13 +44,25 @@ textarea{height:70px;font-size:.8rem}
 .btn.alt.on{background:var(--on);color:var(--onink)}.btns .btn{padding:7px 10px;font-size:.85rem}
 .msg{color:var(--bad);min-height:1.3em;font-size:.9rem;margin:0 0 6px}
 button:focus-visible,.np:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.ico{width:var(--s,64px);height:var(--s,64px);flex:none;border-radius:10px;display:grid;place-items:center;font-size:calc(var(--s,64px)*.55);line-height:1;background:radial-gradient(circle at 30% 25%,hsl(var(--h) 70% 55%),hsl(var(--h) 55% 22%));border:2px solid hsl(var(--h) 80% 70%);box-shadow:inset 0 0 12px rgba(0,0,0,.5),0 0 10px hsl(var(--h) 70% 40%/.6);position:relative}
+.cov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center}
+.gcard{--rc:#4aa3ff;width:min(92vw,360px);max-height:92vh;overflow:auto;padding:18px;text-align:center;background:#14161c;color:#eee;border:3px solid var(--rc);border-radius:12px;box-shadow:0 0 28px var(--rc);animation:gpop .35s cubic-bezier(.2,1.4,.4,1)}
+.gcard.r2{--rc:#4fd16b}.gcard.r3{--rc:#ff9f3a}.gcard.r4{--rc:#d36bff}
+.gtop{letter-spacing:.18em;font-size:.8rem;color:var(--rc);font-weight:700}
+.gicon{position:relative;width:96px;height:96px;margin:22px auto 14px}.gicon .ico{position:relative;z-index:1}
+.rays{position:absolute;inset:-46px;border-radius:50%;background:repeating-conic-gradient(var(--rc) 0 8deg,transparent 8deg 24deg);opacity:.28;-webkit-mask:radial-gradient(circle,#000 25%,transparent 70%);mask:radial-gradient(circle,#000 25%,transparent 70%);animation:gspin 9s linear infinite}
+.gcard h3{margin:4px 0;font-size:1.3rem}.gsub{color:var(--rc);font-size:.85rem;margin-bottom:10px}
+.gfx{text-align:left;font-size:.9rem;border-top:1px solid #333;padding-top:8px;margin-bottom:14px}.gfx div{margin:.4rem 0}
+@keyframes gpop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}@keyframes gspin{to{transform:rotate(360deg)}}
+.srow{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}.srow.lock{opacity:.55}.sd{font-size:.82rem;color:var(--mute)}
+#stat h4{margin:12px 0 4px}
 </style>
 </head>
 <body>
 <div class="w">
-  <div class="top"><div><h1>Aldeburgo</h1><p id="cal"></p></div><div class="btns"><button class="btn alt" id="auto" onclick="auto()">Tempo automático: desligado</button></div></div>
+  <div class="top"><div><h1>Aldeburgo</h1><p id="cal"></p></div><div class="btns"><button class="btn alt" id="mundo" onclick="mundo()">Mundo: normal</button><button class="btn alt" id="popb" onclick="popb()">População: média (60)</button><button class="btn alt" id="ritb" onclick="ritb()">Ritmo: normal</button><button class="btn alt" id="auto" onclick="auto()">Tempo automático: desligado</button></div></div>
   <div class="grid">
-    <div><div class="card" id="me"></div>
+    <div><div class="card" id="me"></div><div class="card" id="statc"><h2>Status</h2><div class="btns" id="stabs"></div><div id="stat"></div></div>
       <div class="card"><h2>Backup</h2><textarea id="bk" placeholder="Cole aqui um save para importar"></textarea><div class="btns"><button class="btn alt" onclick="save(1)">Salvar</button><button class="btn alt" onclick="exp()">Exportar</button><button class="btn alt" onclick="imp()">Importar</button><button class="btn alt" id="nw" onclick="nw()">Novo personagem</button></div></div></div>
     <div>
       <div class="card"><h2>Semana</h2><div id="ev"></div><p class="msg" id="msg"></p>
@@ -59,7 +71,7 @@ button:focus-visible,.np:focus-visible,select:focus-visible{outline:2px solid va
         <button class="btn" id="go" onclick="step()">Executar a ação escolhida e avançar a semana</button></div>
       <div class="card"><h2>Vagas de emprego</h2><div class="npcs" id="ops"></div></div><div class="card"><h2>Diário</h2><ul class="log" id="log"></ul></div>
     </div>
-    <div><div class="card"><h2>Pessoas da cidade</h2><div class="npcs" id="city"></div></div><div class="card"><h2>Economia</h2><div id="eco"></div></div><div class="card" id="npc"></div></div>
+    <div><div class="card"><h2>Pessoas da cidade</h2><div class="npcs" id="city"></div></div><div class="card"><h2>Pessoas notáveis</h2><div id="nota"></div></div><div class="card"><h2>Relatório do mundo</h2><div id="relmundo"></div></div><div class="card"><h2>Economia</h2><div id="eco"></div></div><div class="card" id="npc"></div></div>
   </div>
 </div>
 <script>
@@ -241,7 +253,7 @@ function step(){
   else if(a==="buyg"){var gg=$('gd').value;if(m.m<50){msg('Comprar um lote custa 50.');return;}m.m-=50;m.gs=m.gs||{};m.gs[gg]=(m.gs[gg]||0)+50*100/PX(gg);lg('Comprou um lote de '+GN[gg].toLowerCase()+' (índice de preço '+PX(gg)+').');}
   else if(a==="sellg"){var g4=$('gd').value;m.gs=m.gs||{};var q4=m.gs[g4]||0;if(q4<=0){msg('Você não tem estoque deste item.');return;}var rv=Math.round(q4*PX(g4)/100);m.m+=rv;m.gs[g4]=0;lg('Vendeu o estoque de '+GN[g4].toLowerCase()+' por '+rv+' (índice de preço '+PX(g4)+').');}
   else if(a==="kill"){if(n.sx==="me"||n.pf){msg('Você não pode atacar a própria família.');return;}var ck=35+(nt('percepcao')?15:0)+(CC.indexOf(m.job)>=0?10:0)+(m.st||[]).filter(function(s){return s.o==='spy';}).length*5-(n.nb||0)*10;m.en-=15;if(rnd()*100<Math.min(80,ck)){n.dead=1;if(n.sx&&n.sx!=='me'){var sv2=byId(n.sx);if(sv2)sv2.sx=null;}S.npcs.forEach(function(p){if(!p.dead&&(n.fr||[]).indexOf(p.id)>=0)p.rel-=15;});if(S.lord===n.id)S.lord=0;lg('Alguém morreu em circunstâncias suspeitas: '+n.n+'.');if(rnd()<.3){fa(-8);lg('Há suspeitas contra você.');}}else{fa(-8);lm(50);m.h-=20;n.rel=-50;lg('Foi pego tentando matar '+n.n+'.');}}
-  else if(a==="child"){var sp2=m.sx&&m.sx!=='me'?byId(m.sx):null;if(!sp2||sp2.dead){msg('Você precisa de um cônjuge vivo.');return;}m.en-=10;if(rnd()<.45&&S.npcs.length<70){var kd=mk(0);kd.job='Criança';kd.sp=m.sp;kd.pf=1;kd.rel=70;S.npcs.push(kd);lg('Você e '+sp2.n+' tiveram um filho: '+kd.n+'.');}else lg('Ainda não houve gravidez.');}
+  else if(a==="child"){var sp2=m.sx&&m.sx!=='me'?byId(m.sx):null;if(!sp2||sp2.dead){msg('Você precisa de um cônjuge vivo.');return;}m.en-=10;if(rnd()<.45&&S.npcs.length<popCap()+10){var kd=mk(0);kd.job='Criança';kd.sp=m.sp;kd.pf=1;kd.rel=70;S.npcs.push(kd);lg('Você e '+sp2.n+' tiveram um filho: '+kd.n+'.');}else lg('Ainda não houve gravidez.');}
   else if(a==="gift"){if(m.m<10){msg('Um presente custa 10.');return;}m.m-=10;n.rel=Math.min(100,n.rel+8);rm(n,'Você me deu um presente.');lg('Presenteou '+n.n+' (+8 de afeto).');}
   else if(a==="duel"){if(m.en<20||m.h<30){msg('Você precisa de ao menos 20 de energia e 30 de saúde.');return;}if(n.pf||n.sx==="me"){msg('Não é possível duelar com a família.');return;}foeN(n);lg('Desafiou '+n.n+' para um duelo.');}
   else if(a==="product"){var pq=m.pq||0;if(pq>=3){msg('Seus produtos já estão no nível máximo.');return;}var pc2=40*(pq+1);if(m.m<pc2){msg('Desenvolver um novo produto custa '+pc2+'.');return;}m.m-=pc2;m.en-=10;m.pq=pq+1;fa(1);lg('Lançou um novo produto (+15% de lucro nos negócios).');}
@@ -250,7 +262,7 @@ function step(){
   else if(a==="path"){var P=PA.find(function(x){return x.id===$('pa').value;});m.pa=m.pa||[null,null,null,null];m.ms=m.ms||{};if(m.pa[P.e]){msg('Você já segue um caminho de '+EN[P.e]+'.');return;}if(lvl(P.e)<3){msg('Exige '+EN[P.e]+' nível 3.');return;}if(P.rq&&lvl(P.rq[0])<P.rq[1]){msg('Exige '+EN[P.rq[0]]+' nível '+P.rq[1]+'.');return;}if((m.ms[P.id]||0)<2&&lvl(P.e)<5){msg('Estude ao menos 2 lições com '+MST(P)+' (ou chegue ao nível 5).');return;}m.pa[P.e]=P.id;fa(3);lg('Passou a seguir o caminho: '+P.n+'.');}
   else if(a==="tech"){if(m.k<10||m.en<20){msg('Desenvolver uma técnica exige conhecimento 10 e 20 de energia.');return;}if((m.tq||[]).length>=4){msg('Você já criou 4 técnicas.');return;}m.en-=20;pend=techQ(i,0,[]);lg('Passou a semana desenvolvendo uma técnica de '+EN[i]+'.');}
   else if(a==="decree"){if(!(S.lord==="me"||(m.of||0)>=3)){msg('Decretos exigem ser governante ou Governador da Vila.');return;}var dd=S.dc=S.dc||{tx:1},v=$('dc').value;
-   if(v==='taxup'){if(dd.tx>=2){msg('Impostos já estão no máximo.');return;}dd.tx++;lg('Decretou aumento de impostos.');}
+   if(v==='subf'||v==='subr'||v==='taxl'){var kk={subf:'sf',subr:'sr',taxl:'tl'}[v];dd[kk]=dd[kk]?0:1;lg((dd[kk]?'Decretou: ':'Revogou: ')+{subf:'subsídio à comida',subr:'subsídio aos remédios',taxl:'imposto sobre artigos de luxo'}[v]+'.');}    else if(v==='taxup'){if(dd.tx>=2){msg('Impostos já estão no máximo.');return;}dd.tx++;lg('Decretou aumento de impostos.');}
    else if(v==='taxdn'){if(dd.tx<=0){msg('Impostos já estão no mínimo.');return;}dd.tx--;lg('Decretou redução de impostos.');}
    else if(v==='wall'){if(dd.mur||m.m<200){msg(dd.mur?'A muralha já existe.':'Custa 200.');return;}m.m-=200;dd.mur=1;fa(4);lg('Mandou construir uma muralha.');}
    else if(v==='acad'){if(dd.ac||m.m<250){msg(dd.ac?'A academia já existe.':'Custa 250.');return;}m.m-=250;dd.ac=1;fa(4);lg('Fundou uma academia real.');}
@@ -284,7 +296,7 @@ function step(){
   else if(a==="manage"){m.en-=12;S.mg=1;lg("Dedicou a semana a gerir seus negócios.");}
   else if(a==="train"){var l0=lvl(i);m.tr[i]+=Math.max(1,Math.round((1+m.ap[i]/25)*[1,(S.amb||1),1,Math.max(.4,m.h/100+.3)][i]));m.en-=20;if(lvl(i)>l0)lg("Nova habilidade: "+SK[i][lvl(i)-1][0]+" ("+EN[i]+").");
     if(m.tr[i]>=15&&!m.rev[i]){m.rev[i]=1;lg("Treinando "+EN[i]+", você descobriu uma aptidão "+lv(m.ap[i])+".");}else lg("Treinou "+EN[i]+".");}
-  var need=pr()+3+(m.sx?pr():0)+S.npcs.filter(function(p){return p.pf&&!p.dead&&p.age<16;}).length+petc();
+  var need=pr()+3+(m.age>=18&&S.lord!=='me'?rentc():0)+(m.sx?pr():0)+S.npcs.filter(function(p){return p.pf&&!p.dead&&p.age<16;}).length+petc();
   stf();if(m.of)m.m+=[0,15,25,45,80][m.of];var sq=m.sx?byId(m.sx):null;if(sq&&!sq.dead&&JOBS[sq.job])m.m+=Math.round(JOBS[sq.job]/3);
   if(a==="open"||a==="apply")$("act").value="work";
   if(m.age<18)m.m+=[2,5,15][m.cl];
@@ -399,11 +411,21 @@ JOBS['Desempregado']=0;
 var GJ={f:['Agricultor','Pescador'],t:['Ferreiro','Artesão'],l:['Comerciante'],r:['Curandeiro','Sacerdote']},GW={f:1,t:.35,l:.25,r:.25},GC={f:4,t:1.4,l:2,r:1},GN={f:'Comida',t:'Ferramentas',l:'Artigos de luxo',r:'Remédios'};
 var BG={'Barraca':'f','Oficina':'t','Loja':'l','Casa de Avaliações':'l','Consultório de Curas':'r','Mensageria':'t','Taverna':'f','Estalagem':'f','Ferraria':'t','Alquimia':'r','Caravana':'l','Casa de Câmbio':'l'};
 function ec(){S.ec=S.ec||{pr:{f:100,t:100,l:100,r:100},un:0};return S.ec;}
-function PX(g){return ec().pr[g];}
+var SZN={f:[1.05,.95,.85,1.2],t:[1,1,.95,1.05],l:[1.05,1.1,1,.9],r:[1,.95,1,1.25]},WZN={f:1.1,t:1.25,l:.9,r:1.15};
+function atWar(){try{return W().kg.some(function(k){return k.wr;});}catch(e){return false;}}
+function pxm(g){var x=SZN[g][Math.floor((S.week%52)/13)],dd=S.lord==='me'&&S.dc?S.dc:{};if(g==='f'&&dd.sf)x*=.85;if(g==='r'&&dd.sr)x*=.85;if(g==='l'&&dd.tl)x*=1.1;if(g==='f'&&S.hv)x*=S.hv>0?.85:1.3;if(atWar())x*=WZN[g];return x;}
+function livx(){return(PX('f')*.5+PX('t')*.15+PX('l')*.15+PX('r')*.2)/100;}
+function jw(j){var g=jg(j);return g?jx(j):Math.max(.8,Math.min(1.3,livx()));}
+function rentc(){return Math.round(1.5*livx());}
+function foodc(){return Math.max(1,Math.round(2*PX('f')/100));}
+function npcCosts(p){var f=p.rt?.7:1;p.w=Math.max(0,Math.round(p.w-f*(foodc()+(p.ho!==0?rentc():0)+p.w*.01)));}
+function harvest(){if(S.week%52===26&&S.hvw!==S.week){S.hvw=S.week;var r=rnd();S.hv=r<.2?-1:r<.4?1:0;if(S.hv)lg(S.hv<0?'A colheita deste ano foi ruim: a comida vai custar mais até a próxima.':'A colheita deste ano foi farta: a comida vai custar menos até a próxima.');}}
+function ecoNotes(){var z=['Primavera','Verão','Outono','Inverno'][Math.floor((S.week%52)/13)],n=[];n.push('Estação: '+z+' (comida '+(SZN.f[Math.floor((S.week%52)/13)]>1?'mais cara':'mais barata')+', remédios '+(SZN.r[Math.floor((S.week%52)/13)]>1?'mais caros':'normais')+')');n.push('Colheita: '+(S.hv>0?'farta':S.hv<0?'ruim':'normal'));n.push('Guerra: '+(atWar()?'ativa (ferramentas e remédios mais caros)':'nenhuma'));return n;}
+function PX(g){return Math.round(ec().pr[g]*pxm(g));}
 function jg(j){for(var g in GJ)if(GJ[g].indexOf(j)>=0)return g;return null;}
 function jx(j){var g=jg(j);return g?Math.max(.7,Math.min(1.4,PX(g)/100)):1;}
 function hot(){var b=null;for(var g in GJ)if(!b||PX(g)>PX(b))b=g;return b;}
-function econ(){var E=ec(),al=S.npcs.filter(function(p){return!p.dead&&p.age>=16;}),ad=al.length;
+function econ(){harvest();var E=ec(),al=S.npcs.filter(function(p){return!p.dead&&p.age>=16;}),ad=al.length;
  for(var g in GJ){var sp=0;al.forEach(function(p){if(GJ[g].indexOf(p.job)>=0)sp+=1;if(p.bz&&(p.bg||'l')===g)sp+=2;});S.me.biz.forEach(function(b){if(BG[b.t]===g)sp+=(b.lv||1);});sp=Math.max(1,sp*GC[g]);var tg=Math.max(50,Math.min(220,100*ad*GW[g]/sp));E.pr[g]=Math.max(40,Math.min(250,Math.round(E.pr[g]+(tg-E.pr[g])*.15+ri(-3,3))));}
  if(rnd()<.04){var gx=pk(Object.keys(GJ)),f=rnd()<.5?1.3:.75;E.pr[gx]=Math.round(Math.max(40,Math.min(250,E.pr[gx]*f)));lg((f>1?'Escassez de ':'Excesso de ')+GN[gx].toLowerCase()+': os preços '+(f>1?'dispararam':'despencaram')+'.');}
  al.forEach(function(p){if(p.job==='Criança'||p.hb)return;var g=jg(p.job);if(g)p.w=Math.max(0,p.w+Math.round((PX(g)-100)/25));
@@ -415,8 +437,8 @@ function econ(){var E=ec(),al=S.npcs.filter(function(p){return!p.dead&&p.age>=16
  E.un=ad?al.filter(function(p){return p.job==='Desempregado';}).length/ad:0;}
 function renderEco(){var E=ec(),m=S.me,al=S.npcs.filter(function(p){return!p.dead&&p.age>=16;}),h='',gs=m.gs||{};
  if(!$('gd').options.length)$('gd').innerHTML=Object.keys(GN).map(function(g){return'<option value="'+g+'">'+GN[g]+'</option>';}).join('');
- for(var g in GJ){var v=E.pr[g];h+='<div class="kv"><span>'+GN[g]+(gs[g]>0?' (seu estoque: '+Math.round(gs[g])+')':'')+'</span><span>'+v+(v>130?' (caro)':v<75?' (barato)':' (normal)')+'</span></div>';}
- h+='<div class="kv"><span>Mana no ambiente</span><span>'+Math.round((S.amb||1)*100)+'%</span></div>';h+='<div class="kv"><span>Desemprego</span><span>'+Math.round((E.un||0)*100)+'%</span></div><div class="kv"><span>Negócios de NPCs</span><span>'+al.filter(function(p){return p.bz;}).length+'</span></div>';
+ for(var g in GJ){var v=PX(g);h+='<div class="kv"><span>'+GN[g]+(gs[g]>0?' (seu estoque: '+Math.round(gs[g])+')':'')+'</span><span>'+v+(v>130?' (caro)':v<75?' (barato)':' (normal)')+'</span></div>';}
+ h+=regHtml();ecoNotes().forEach(function(x){h+='<p class="sd" style="margin:2px 0">'+x+'</p>';});h+='<div class="kv"><span>Custo de vida de um NPC por semana</span><span>comida '+foodc()+' + aluguel '+rentc()+' + 1% do que possui</span></div><div class="kv"><span>Tratamento de saúde</span><span>'+Math.round(10*PX('r')/100)+'</span></div>';h+='<div class="kv"><span>Mana no ambiente</span><span>'+Math.round((S.amb||1)*100)+'%</span></div>';h+='<div class="kv"><span>Desemprego</span><span>'+Math.round((E.un||0)*100)+'%</span></div><div class="kv"><span>Negócios de NPCs</span><span>'+al.filter(function(p){return p.bz;}).length+'</span></div>';
  $('eco').innerHTML=h;}
 ACTS.push({v:'buyg',c:'Negócios',n:'Comprar um lote de mercadorias',d:'Custa 50 ao preço atual. Escolha o item abaixo.'},{v:'sellg',c:'Negócios',n:'Vender o estoque de mercadorias',d:'Vende tudo ao preço atual. Escolha o item abaixo.'});
 function src(i){var m=S.me;return!!((m.acl&&m.acl[i]>=3)||m.gd||(S.dc&&S.dc.ac)||(m.af||[]).some(function(a){return a.e===i;})||Object.keys(m.ms||{}).some(function(id){var P=PA.find(function(x){return x.id===id;});return P&&P.e===i&&m.ms[id]>=1;}));}
@@ -476,7 +498,7 @@ JX['_crime']=[EV('Investigação da guarda','A guarda suspeita das suas atividad
 ACTS.push({v:'lobby',c:'Poder',n:'Fazer lobby (ganhar favores políticos)',d:'Escolha a influência abaixo. Exige cargo, título ou governo.'},{v:'law',c:'Poder',n:'Propor uma lei',d:'Escolha a lei e a influência abaixo. Custa 40.'},{v:'embassy',c:'Poder',n:'Enviar embaixada ao reino vizinho',d:'Aliança: guerras mais fáceis e renda extra. Custa 80.'},
 {v:'blackm',c:'Submundo',n:'Chantagear a pessoa selecionada',d:'Exige afeto 20+ ou segredos conhecidos. Arriscado.'},{v:'smug',c:'Submundo',n:'Organizar contrabando',d:'Custa 60. Lucro alto, risco de apreensão.'},{v:'buyp',c:'Submundo',n:'Comprar um contrato de servidão',d:'Custa 120. Gera renda, mas o povo reprova.'},{v:'freeslv',c:'Submundo',n:'Libertar seus servos',d:'Ganha fama e afeto. Perde a renda deles.'},{v:'buya',c:'Submundo',n:'Comprar um animal no mercado negro',d:'Escolha o animal abaixo. Animais raros podem ser fraude.'},{v:'buyr',c:'Submundo',n:'Comprar um artefato raro',d:'Custa 500. Exige submundo 10. Pode ser falso.'},{v:'gang',c:'Submundo',n:'Fundar ou ampliar uma rede criminosa',d:'Renda semanal. Aumenta o risco de ser procurado.'},{v:'bribe',c:'Submundo',n:'Subornar autoridades',d:'Custa 60 e reduz o quanto você é procurado.'});
 CT=['Trabalho','Negócios','Equipe','Pessoas','Treino','Caminhos','Aventura','Prestígio','Poder','Submundo'];
-function kid(){var m=S.me;if(!m.sx||m.age<18||m.age>45||rnd()>.008)return;var s=byId(m.sx);if(!s||s.dead||S.npcs.length>=70)return;var k=mk(0);k.job='Criança';k.sp=m.sp;k.pf=1;k.rel=70;S.npcs.push(k);lg('Você e '+s.n+' tiveram um filho: '+k.n+'.');}
+function kid(){var m=S.me;if(!m.sx||m.age<18||m.age>45||rnd()>.008)return;var s=byId(m.sx);if(!s||s.dead||S.npcs.length>=popCap()+10)return;var k=mk(0);k.job='Criança';k.sp=m.sp;k.pf=1;k.rel=70;S.npcs.push(k);lg('Você e '+s.n+' tiveram um filho: '+k.n+'.');}
 function hrs(){var m=S.me,r=[];S.npcs.forEach(function(p){if(p.dead||p.age<16)return;var t=p.pf?'filho(a)':(m.sx===p.id?'cônjuge':(p.rel>=40?'amigo(a) próximo(a)':''));if(t)r.push({p:p,t:t});});return r;}
 function succ(id){var o=S.me,p=byId(id);if(!p)return;var pf=p.pf?1:0,fam=pf||o.sx===p.id,sp=p.sp,ps=typeof p.sx==='number'?byId(p.sx):null,job=p.job==='Criança'?'Desempregado':p.job;
  var ap=SP[sp].e.map(function(x,i){var b=Math.round(x*ri(10,60));return pf&&sp===o.sp?Math.round((o.ap[i]+b)/2):b;});
@@ -502,55 +524,122 @@ function newOp(){if(S.ops.length>=8)return;var p=npcR(),j=rnd()<.4?pk(GJ[hot()])
 function npcStep(){
   S.npcs.forEach(function(p){
     if(p.dead)return;
-    if(p.job!=="Criança")p.w=Math.max(0,p.w+ri(-3,Math.round(JOBS[p.job]/2)));
+    if(p.job!=="Criança"&&!p.rt)p.w=Math.max(0,p.w+ri(0,Math.round(JOBS[p.job]*jw(p.job))));
     p.fr=p.fr||[];p.ri=p.ri||[];p.mem=p.mem||[];ng(p);npcLife(p);var mx=SP[p.sp].max;
-    if(p.age>mx*.7&&rnd()<(p.age-mx*.7)/(mx*.6)*.02){p.dead=1;lg(p.n+" morreu aos "+p.age+" anos.");if(p.sx==="me")S.me.sx=null;if(p.sx){var q0=byId(p.sx);if(q0)q0.sx=null;}p.sx=null;return;}
+    if(p.age>mx*.7&&rnd()<(p.age-mx*.7)/(mx*.6)*.02){p.dead=1;lg(p.n+" morreu aos "+p.age+" anos.");inherit(p,1);if(p.sx==="me")S.me.sx=null;if(p.sx){var q0=byId(p.sx);if(q0)q0.sx=null;}p.sx=null;return;}
     if(!p.sx&&p.age>=18&&rnd()<.01){
       var c=S.npcs.filter(function(q){return!q.dead&&!q.sx&&q.id!==p.id&&q.age>=18&&Math.abs(q.age-p.age)<15;});
-      if(c.length){var q=pk(c);p.sx=q.id;q.sx=p.id;lg(p.n+" e "+q.n+" se casaram.");}
-    }else if(p.sx&&p.id<p.sx&&p.age>=18&&p.age<mx*.5&&rnd()<.006&&alive()<60){
-      var k=mk(0);k.job="Criança";S.npcs.push(k);lg(p.n+" teve um filho: "+k.n+".");
+      if(c.length){var q=pk(c);p.sx=q.id;q.sx=p.id;lg(p.n+" e "+q.n+" se casaram.");cvPush({k:"c",a:p.id,b:q.id});}
+    }else if(p.sx&&p.id<p.sx&&p.age>=18&&p.age<mx*.5&&rnd()<.006*rtm()&&alive()<popCap()){
+      var k=mk(0);k.job="Criança";k.pa=[p.id,p.sx];S.npcs.push(k);lg(p.n+" teve um filho: "+k.n+".");cvPush({k:"b",a:p.id,b:typeof p.sx==="number"?p.sx:0,c:k.id});
     }
   });
 }
 var PLN={riqueza:'Expandir os negócios e juntar capital',aventura:'Fazer fama como aventureiro',família:'Formar e sustentar uma família',estudo:'Escrever um tratado e formar discípulos'};
-function nlg(p,x){if(p.rel>=20||p.kn||rnd()<.65)lg(x);}
+function nlg(p,x){stc(x);if(p.rel>=20||p.kn||rnd()<.65)lg(x);}
 function takeSides(w,x){var al=kin(x).concat((x.fr||[]).map(byId)).filter(function(a){return a&&!a.dead&&a.id!==w.id&&a.t[2]>50&&(a.ri||[]).indexOf(w.id)<0&&rnd()<.5;}).slice(0,2);al.forEach(function(a){a.ri=a.ri||[];w.ri=w.ri||[];a.ri.push(w.id);w.ri.push(a.id);rm(a,'Tomou o partido de '+x.n+' contra '+w.n+'.');rm(w,a.n+' tomou partido contra ele.');nlg(w,a.n+' tomou o partido de '+x.n+' e passou a rivalizar com '+w.n+'.');});}
 var JF={'Guarda':[1,2],'Mago':[3,1],'Artista Marcial':[1],'Estudioso':[3],'Sacerdote':[2,3],'Curandeiro':[2,3],'Comerciante':[0],'Avaliador':[0,3],'Ferreiro':[1],'Mensageiro':[1],'Agricultor':[2],'Pescador':[3],'Artesão':[3]};
 function jsc(p,j){var s=JOBS[j]*(p.t[0]/50);(JF[j]||[]).forEach(function(i){s+=p.t[i]>65?6:p.t[i]<30?-3:0;});return s;}
-function jobPick(p){if(p.bz||p.job==='Criança'||rnd()>=.006)return;var b=JN.slice().sort(function(a,c){return jsc(p,c)-jsc(p,a);})[0];if(b!==p.job&&jsc(p,b)>jsc(p,p.job)+3){var o=p.job;p.job=b;p.pg=Math.max(0,(p.pg||0)-15);rm(p,'Trocou de ofício: de '+o+' para '+b+'.');nlg(p,p.n+' deixou o ofício de '+o+' para virar '+b+', mais de acordo com seu jeito.');}}
+function jobPick(p){if(p.bz||p.rt||p.job==='Criança'||rnd()>=.006)return;var b=JN.slice().sort(function(a,c){return jsc(p,c)-jsc(p,a);})[0];if(b!==p.job&&jsc(p,b)>jsc(p,p.job)+3){var o=p.job;p.job=b;p.pg=Math.max(0,(p.pg||0)-15);rm(p,'Trocou de ofício: de '+o+' para '+b+'.');nlg(p,p.n+' deixou o ofício de '+o+' para virar '+b+', mais de acordo com seu jeito.');}}
+function popCap(){return[40,60,90][S.pc===undefined?1:S.pc];}
+function rtm(){return[.5,1,1.8][S.rt===undefined?1:S.rt];}
+function popb(){S.pc=((S.pc===undefined?1:S.pc)+1)%3;save();draw();}
+function ritb(){S.rt=((S.rt===undefined?1:S.rt)+1)%3;save();draw();}
+function im(){return[.5,1,1.8][S.int===undefined?1:S.int];}
+function mlabel(){var pb=$("popb"),rb=$("ritb");if(pb)pb.textContent='População: '+['pequena (40)','média (60)','grande (90)'][S.pc===undefined?1:S.pc];if(rb)rb.textContent='Ritmo: '+['lento','normal','rápido'][S.rt===undefined?1:S.rt];var b=$("mundo");if(b)b.textContent='Mundo: '+['calmo','normal','turbulento'][S.int===undefined?1:S.int];}
+function mundo(){S.int=((S.int===undefined?1:S.int)+1)%3;save();draw();}
+function inherit(p,full){if(full)cvPush({k:'f',a:p.id});var kids=S.npcs.filter(function(q){return!q.dead&&q.pa&&q.pa.indexOf(p.id)>=0&&q.age>=16;}),sp=p.sx&&p.sx!=='me'?byId(p.sx):null,ds=p.di?byId(p.di):null,h=kids.length?kids:(sp&&!sp.dead?[sp]:(ds&&!ds.dead?[ds]:[]));if(!h.length)return 0;var sh=Math.round(p.w*(full?.6:.4)/h.length);h.forEach(function(q){q.w+=sh;rm(q,'Herdou '+sh+' de '+p.n+'.');});p.w-=sh*h.length;if(p.bz){h[0].bz=1;h[0].bg=p.bg;p.bz=0;rm(h[0],'Assumiu o negócio de '+p.n+'.');}nlg(p,full?p.n+' deixou herança a '+h.map(function(q){return q.n;}).join(', ')+'.':p.n+' se aposentou e passou bens e negócio a '+h[0].n+'.');return 1;}
+function notaHtml(){var a=S.npcs.filter(function(p){return!p.dead&&p.age>=16;});function top(f,min){return a.slice().sort(function(x,y){return f(y)-f(x);}).filter(function(p){return f(p)>min;}).slice(0,3).map(function(p){return'<span style="cursor:pointer;text-decoration:underline" onclick="pick('+p.id+')">'+p.n+'</span> ('+p.job+(p.rt?', aposentado':'')+', '+p.age+')';}).join('<br>')||'ninguém';}
+ return[['Mais ricos',top(function(p){return p.w;},0)],['Mais queridos por você',top(function(p){return p.rel;},0)],['Mais populares',top(function(p){return(p.fr||[]).length+kin(p).length;},0)]].map(function(r){return'<div class="kv"><span>'+r[0]+'</span><span style="text-align:right">'+r[1]+'</span></div>';}).join('');}
+function notable(){var e=$("nota");if(e)e.innerHTML=notaHtml();}
+var STK=[[/doen|adoeceu/,'Doenças'],[/briga|multou/,'Brigas e multas'],[/empréstimo/,'Empréstimos'],[/não pagou/,'Calotes'],[/perdeu a moradia/,'Perdas de moradia'],[/deixou a vila/,'Partidas'],[/aposentou|herança|passou bens/,'Aposentadorias e heranças'],[/tomou o partido/,'Partidos tomados'],[/pazes/,'Pazes']];
+function stc(x){var y=Math.floor(S.week/52);S.st=S.st||{};var b=S.st[y]=S.st[y]||{};STK.forEach(function(r){if(r[0].test(x))b[r[1]]=(b[r[1]]||0)+1;});Object.keys(S.st).forEach(function(k){if(+k<y-1)delete S.st[k];});}
+function repHtml(){var a=S.npcs.filter(function(p){return!p.dead&&p.age>=16;}),n=a.length||1,y=Math.floor(S.week/52),cur=(S.st&&S.st[y])||{},prev=(S.st&&S.st[y-1])||{};
+ function pc(f){return Math.round(100*a.filter(f).length/n);}
+ var ws=a.map(function(p){return p.w;}).sort(function(x,z){return x-z;}),med=ws.length?ws[Math.floor(ws.length/2)]:0,avg=Math.round(ws.reduce(function(s,v){return s+v;},0)/n);
+ var pairs=0;a.forEach(function(p){pairs+=(p.ri||[]).length;});
+ var rows=[['Moradores vivos (adultos)',alive()+' ('+a.length+')'],['Teto de população / ritmo',popCap()+' / '+['lento','normal','rápido'][S.rt===undefined?1:S.rt]],['Riqueza média / mediana',avg+' / '+med],['Passando necessidade',pc(function(p){return(p.hu||0)>=4;})+'%'],['Sem moradia',pc(function(p){return p.ho===0;})+'%'],['Endividados',pc(function(p){return p.db>0;})+'%'],['Doentes',pc(function(p){return p.sa<40;})+'%'],['Aposentados',pc(function(p){return p.rt;})+'%'],['Rivalidades ativas',Math.round(pairs/2)]];
+ var ev=Object.keys(cur).map(function(k){return[k+' (este ano / anterior)',cur[k]+' / '+(prev[k]||0)];});
+ var tips=[];if(alive()>=popCap()-2)tips.push('A vila está no teto de '+popCap()+' moradores: aumente o teto ou reduza o ritmo.');if(alive()<popCap()*.5)tips.push('A vila está com menos da metade do teto: aumente o ritmo de nascimentos e chegadas.');if(pc(function(p){return(p.hu||0)>=4||p.ho===0;})>25)tips.push('Muita gente em necessidade: considere o mundo calmo.');if((cur['Brigas e multas']||0)>10)tips.push('Muitas brigas neste ano.');if(avg>600)tips.push('A riqueza média está muito alta: considere o mundo turbulento.');
+ return rows.concat(ev).map(function(r){return'<div class="kv"><span>'+r[0]+'</span><span>'+r[1]+'</span></div>';}).join('')+(tips.length?'<p style="color:var(--mute)">'+tips.join(' ')+'</p>':'');}
+function report(){var e=$("relmundo");if(e)e.innerHTML=repHtml();}
+function cvPush(o){S.cv=(S.cv||[]).filter(function(r){return S.week-r.w<5;});o.w=S.week;S.cv.push(o);}
+function cvPeople(r){return[r.a,r.b].map(function(i){return i?byId(i):null;}).filter(function(q){return q&&!q.dead;});}
+function cvEvent(){S.cv=(S.cv||[]).filter(function(r){return S.week-r.w<5;});var r=S.cv.filter(function(q){return!q.d;})[0];if(!r)return null;r.d=1;var M=S.me,ps=cvPeople(r),all=function(f){ps.forEach(f);};
+ if(r.k==='c'&&ps.length===2)return{x:'Convite de casamento',d:ps[0].n+' e '+ps[1].n+' se casaram e convidam você para a festa.',o:[{l:'Ir com presente (20)',f:function(){if(M.m>=20){M.m-=20;all(function(q){q.rel+=8;rm(q,'Você foi ao casamento com um presente.');});fa(1);lg('Você foi ao casamento de '+ps[0].n+' e '+ps[1].n+' com um presente.');}else lg('Faltou dinheiro para o presente.');}},{l:'Ir de mãos vazias',f:function(){all(function(q){q.rel+=3;});lg('Você foi ao casamento de '+ps[0].n+' e '+ps[1].n+'.');}},{l:'Não ir',f:function(){all(function(q){if(q.rel>=20){q.rel-=3;rm(q,'Você faltou ao casamento.');}});lg('Você não foi ao casamento.');}}]};
+ if(r.k==='f'){var d=byId(r.a);if(!d)return null;var kn=kin(d);return{x:'Funeral de '+d.n,d:'A vila se despede de '+d.n+'. A família espera que você compareça.',o:[{l:'Comparecer e ajudar a família (10)',f:function(){if(M.m>=10){M.m-=10;kn.forEach(function(q){q.rel+=6;rm(q,'Você ajudou no funeral de '+d.n+'.');});fa(1);lg('Você ajudou a família no funeral de '+d.n+'.');}else lg('Faltou dinheiro.');}},{l:'Apenas comparecer',f:function(){kn.forEach(function(q){q.rel+=3;});lg('Você foi ao funeral de '+d.n+'.');}},{l:'Não ir',f:function(){kn.forEach(function(q){q.rel-=3;});lg('Você não foi ao funeral de '+d.n+'.');}}]};}
+ if(r.k==='s'){var nm2=['Festa da primavera','Festival do verão','Festa da colheita','Festa do inverno'][Math.floor((r.w%52)/13)],pool=S.npcs.filter(function(q){return!q.dead&&q.age>=16;});var fe={x:nm2,d:'A vila inteira se reúne para a '+nm2.toLowerCase()+'.',o:[{l:'Contribuir com a festa (15)',f:function(){if(M.m>=15){M.m-=15;fa(2);for(var i=0;i<3;i++){var q=pk(pool);if(q)q.rel+=3;}lg('Sua contribuição foi elogiada na '+nm2.toLowerCase()+'.');}else lg('Faltou dinheiro.');}},{l:'Só participar',f:function(){var q=pk(pool);if(q){q.rel+=2;}lg('Você se divertiu na '+nm2.toLowerCase()+'.');}},{l:'Ficar em casa',f:function(){lg('Você ficou em casa durante a '+nm2.toLowerCase()+'.');}}]};var sg=pool.filter(function(q){return!q.sx&&q.age>=18&&q.rel>=-10&&Math.abs(q.age-M.age)<=15;});if(sg.length&&M.age>=16&&!M.sx)fe.o.splice(2,0,{l:'Aproveitar para se aproximar de alguém',f:function(){var q=pk(sg);q.rel+=12;rm(q,'Conversou com você na festa.');lg('Você se aproximou de '+q.n+' na '+nm2.toLowerCase()+'.');}});return fe;}
+ if(r.k==='b'&&ps.length){var kd=byId(r.c);if(!kd)return null;return{x:'Batizado de '+kd.n,d:ps.map(function(q){return q.n;}).join(' e ')+' celebram o nascimento de '+kd.n+' e convidam você para o batizado.',o:[{l:'Ser padrinho ou madrinha (20)',f:function(){if(M.m>=20){M.m-=20;all(function(q){q.rel+=10;rm(q,'Você foi padrinho do batizado de '+kd.n+'.');});kd.rel=Math.max(kd.rel||0,30);fa(1);lg('Você foi padrinho do batizado de '+kd.n+'.');}else lg('Faltou dinheiro.');}},{l:'Apenas comparecer',f:function(){all(function(q){q.rel+=3;});lg('Você foi ao batizado de '+kd.n+'.');}},{l:'Não ir',f:function(){all(function(q){if(q.rel>=20)q.rel-=2;});lg('Você não foi ao batizado de '+kd.n+'.');}}]};}
+ if(r.k==='a'){var ol=byId(r.a);if(!ol||ol.dead)return null;var kn2=kin(ol);return{x:'Aniversário de '+ol.n,d:ol.n+' faz '+ol.age+' anos e a vila se reúne para homenagear a pessoa.',o:[{l:'Levar um presente (10)',f:function(){if(M.m>=10){M.m-=10;ol.rel+=8;kn2.forEach(function(q){q.rel+=3;});rm(ol,'Você levou um presente no aniversário.');lg('Você levou um presente a '+ol.n+'.');}else lg('Faltou dinheiro.');}},{l:'Apenas visitar',f:function(){ol.rel+=4;lg('Você visitou '+ol.n+' no aniversário.');}},{l:'Não ir',f:function(){lg('Você não foi ao aniversário de '+ol.n+'.');}}]};}
+ if(r.k==='j'&&ps.length===2){var A=ps[0],B=ps[1];return{x:'Julgamento de '+A.n+' e '+B.n,d:'A guarda multou '+A.n+' e '+B.n+' por brigas. Cada um pede que você o defenda diante do juiz.',o:[{l:'Defender '+A.n,f:function(){A.rel+=8;B.rel-=5;A.w+=20;rm(A,'Você o defendeu no julgamento.');lg('Você defendeu '+A.n+' contra '+B.n+' no julgamento.');}},{l:'Defender '+B.n,f:function(){B.rel+=8;A.rel-=5;B.w+=20;rm(B,'Você o defendeu no julgamento.');lg('Você defendeu '+B.n+' contra '+A.n+' no julgamento.');}},{l:'Pedir clemência para os dois',f:function(){if(rnd()<.5){A.w+=20;B.w+=20;A.rel+=3;B.rel+=3;lg('Sua clemência perdoou as multas de '+A.n+' e '+B.n+'.');}else lg('O juiz ignorou seu pedido de clemência.');}}]};}
+ return null;}
+var EI={forca:'💪',logistica:'🥾',percepcao:'👁️',artesao:'🔨',avaliar:'🔍',comercio:'🛒',persuasao:'🗣️',cura:'💚',ensino:'📖',animais:'🐾',sang:'🩸',labor:'🧤',pers:'🗣️',estu:'🧠',cari:'❤️',somb:'🌑',viaj:'🧭','Coroa de Cinzas':'👑','Espada Sem Nome':'🗡️','Tomo Proibido':'📕','Amuleto do Dragão':'🧿','Olho do Oráculo':'🔮','Anel da Guilda Perdida':'💍','Lobo-lunar':'🐺','Cervo de cristal':'🦌','Raposa-fogo':'🦊','Coruja arcana':'🦉','Grifo':'🦅','Unicórnio':'🦄','Fênix':'🔥','Wyvern':'🐉','Dragão':'🐲'},EIE=['🥋','🔮','✨','🌿'];
+function hh(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h;}
+function icon(e,h,s){return'<div class="ico" style="--h:'+h+';--s:'+(s||64)+'px"><span>'+e+'</span></div>';}
+function keff(k,v){return({d:'Causa dano (cerca de '+v+').',b:'Protege você do próximo golpe.',h:'Recupera cerca de '+v+' de vida.',u:'Seus golpes ficam 30% mais fortes por 3 turnos.',e:'O inimigo perde precisão por 3 turnos.',v:'Você se prepara para esquivar.',r:'Um aliado luta ao seu lado por 4 turnos.',o:'Causa dano contínuo por 3 turnos.',l:'Causa dano e recupera metade em vida.',s:'Causa dano e pode atordoar (50%).'})[k]||'';}
+function pathFx(P){var r=[];if(P.dm)r.push('+'+Math.round(P.dm*100)+'% de dano em combate.');if(P.df)r.push('-'+Math.round(P.df*100)+'% de dano recebido.');if(P.w)r.push('+'+P.w+' de renda por semana.');if(P.f)r.push('+'+P.f+' de fama a cada 4 semanas.');if(P.s)r.push(P.s>0?'O povo o aprecia: afeto sobe a cada semana.':'O povo o teme: afeto cai a cada semana.');P.p.forEach(function(q){r.push('Poder: '+q[0]+' ('+q[1]+' de energia). '+keff(q[2],q[3]));});return r;}
+var cardQ=[],cardOpen=false;
+function nextCard(){var ov=$("cardov");if(!cardQ.length){cardOpen=false;ov.style.display='none';ov.innerHTML='';return;}cardOpen=true;var c=cardQ.shift();ov.style.display='flex';ov.innerHTML='<div class="gcard r'+c.r+'"><div class="gtop">'+c.t+'</div><div class="gicon"><div class="rays"></div>'+icon(c.e,c.h,96)+'</div><h3>'+c.n+'</h3><div class="gsub">'+c.s+'</div><div class="gfx">'+c.fx.map(function(x){return'<div>'+x+'</div>';}).join('')+'</div><button class="btn" onclick="nextCard()">'+(cardQ.length?'Próximo ('+cardQ.length+')':'Continuar')+'</button></div>';}
+function showCards(l){cardQ=cardQ.concat(l);if(!cardOpen)nextCard();}
+document.addEventListener('keydown',function(e){if(cardOpen&&(e.key==='Enter'||e.key===' ')){e.preventDefault();nextCard();}});
+function allKeys(){var m=S.me,o=[];for(var i=0;i<4;i++)for(var j=0;j<lvl(i);j++)o.push('sk:'+i+':'+j);(m.ps||[]).forEach(function(x){o.push('ps:'+x);});(m.ra||[]).forEach(function(x){o.push('ra:'+x);});(m.pets||[]).forEach(function(x,k){o.push('pet:'+x+':'+k);});myPaths().forEach(function(p){o.push('pa:'+p.id);});return o;}
+function mkCard(k){var a=k.split(':'),ty=a[0];
+ if(ty==='sk'){var i=+a[1],j=+a[2],s=SK[i][j],p=CP[i][j];return{t:'NOVA HABILIDADE',r:1,e:EI[s[2]]||EIE[i],h:hh(s[0]),n:s[0],s:EN[i]+' · nível '+(j+1),fx:[s[1],'Perícia de '+TG[s[2]]+': melhora ações ligadas a '+TG[s[2]]+'.','Poder de combate: '+p[0]+' ('+p[1]+' de energia). '+keff(p[2],p[3])]};}
+ if(ty==='ps'){var q=PS.find(function(x){return x[0]===a[1];});return{t:'NOVA PASSIVA',r:2,e:EI[a[1]]||'⭐',h:hh(q[1]),n:q[1],s:'Passiva permanente',fx:[q[2].charAt(0).toUpperCase()+q[2].slice(1)+'.']};}
+ if(ty==='ra'){var r=RA.find(function(x){return x[0]===a[1];});return{t:'ARTEFATO RARO',r:4,e:EI[a[1]]||'🏺',h:hh(a[1]),n:a[1],s:'Artefato lendário',fx:[r?r[1].charAt(0).toUpperCase()+r[1].slice(1)+'.':'']};}
+ if(ty==='pet'){var n=a[1],f=['+'+(PP[n]||3)+' de dano em combate.','Consome '+(PCST[n]||1)+' de comida por semana.'];if(n==='Dragão')f.push('+1 de fama a cada 4 semanas.');return{t:'NOVO COMPANHEIRO',r:3,e:EI[n]||'🐾',h:hh(n),n:n,s:'Companheiro',fx:f};}
+ var P=PA.find(function(x){return x.id===a[1];});return{t:'NOVO CAMINHO',r:3,e:EIE[P.e],h:hh(P.n),n:P.n,s:EN[P.e],fx:[P.d].concat(pathFx(P))};}
+function chkNew(){var m=S.me;if(!m||!m.tr)return;var cur=allKeys();if(!m.sn){m.sn=cur;return;}var nw=cur.filter(function(k){return m.sn.indexOf(k)<0;});if(nw.length){m.sn=m.sn.concat(nw);showCards(nw.slice(0,6).map(mkCard));}}
+var stab='hab',PSR={sang:[function(m){return m.kh||0;},10,'humanos derrotados'],labor:[function(m){return ac(m,'work');},30,'semanas de trabalho'],pers:[function(m){return ac(m,'soc')+ac(m,'talk');},25,'conversas e ações sociais'],estu:[function(m){return ac(m,'study');},25,'semanas de estudo'],cari:[function(m){return ac(m,'charity');},8,'atos de caridade'],somb:[function(m){return ac(m,'smug')+ac(m,'blackm');},5,'contrabando e mercado negro'],viaj:[function(m){return ac(m,'travel')+ac(m,'seek');},8,'viagens e buscas']};
+function srow(e,n,d,lock){return'<div class="srow'+(lock?' lock':'')+'">'+icon(lock?'🔒':e,hh(n),36)+'<div><b>'+n+'</b><div class="sd">'+d+'</div></div></div>';}
+function stHtml(){var m=S.me,o='';
+ if(stab==='hab'){var pr=Object.keys(TG).filter(function(k){return nt(k)>0;}).map(function(k){return TG[k]+' ×'+nt(k);});o+='<p class="sd">Perícias ativas: '+(pr.join(', ')||'nenhuma')+'. Habilidade no ofício: '+m.sk+'.</p>';
+  for(var i=0;i<4;i++){o+='<h4>'+EN[i]+' (nível '+lvl(i)+'/5, energia máxima '+emax(i)+')</h4>';for(var j=0;j<5;j++){var s=SK[i][j],p=CP[i][j];o+=j<lvl(i)?srow(EI[s[2]]||EIE[i],s[0],s[1]+'<br>Perícia: '+TG[s[2]]+'. Combate: '+p[0]+' ('+p[1]+' de energia). '+keff(p[2],p[3])):srow('',s[0],'Libera no nível '+(j+1)+' de '+EN[i]+'.',1);}}}
+ else if(stab==='bon'){var ps=myPaths();o+=srow('⚔️','Dano em combate','+'+Math.round((pdm()-1)*100)+'%'+(hp('sang')?' (e +20% contra humanos)':'')+(petp()?'. Companheiros somam +'+petp()+' de dano.':''));o+=srow('🛡️','Dano recebido','-'+Math.round((1-pdf())*100)+'%');
+  if(ps.length)o+=srow('💰','Renda dos caminhos','+'+ps.reduce(function(a,p){return a+(p.w||0);},0)+' por semana');if(petc())o+=srow('🍖','Sustento dos companheiros',petc()+' de comida por semana');
+  for(var k=0;k<4;k++)o+=srow(EIE[k],EN[k],'Máximo '+emax(k)+' (nível '+lvl(k)+'; '+m.sp+' x'+SP[m.sp].e[k]+')');
+  o+=srow('📜','Passivas e artefatos',(m.ps||[]).length+' passivas, '+(m.ra||[]).length+' artefatos');}
+ else if(stab==='pas'){PS.forEach(function(p){var own=(m.ps||[]).indexOf(p[0])>=0,r=PSR[p[0]];o+=own?srow(EI[p[0]]||'⭐',p[1],p[2].charAt(0).toUpperCase()+p[2].slice(1)+'.'):srow('',p[1],p[2].charAt(0).toUpperCase()+p[2]+'.'+(r?'<br>Progresso: '+Math.min(r[1],r[0](m))+'/'+r[1]+' '+r[2]+'.':''),1);});}
+ else if(stab==='art'){var ow=m.ra||[];RA.forEach(function(r){if(ow.indexOf(r[0])>=0)o+=srow(EI[r[0]]||'🏺',r[0],r[1].charAt(0).toUpperCase()+r[1].slice(1)+'.');});var miss=RA.length-ow.length;o+=ow.length?'':'<p class="sd">Você ainda não tem artefatos.</p>';if(miss)o+=srow('','Artefatos não descobertos',miss+' ainda por achar. Compre no mercado negro (500, influência 10) ou ache em expedições.',1);}
+ else if(stab==='pet'){var pt=m.pets||[];pt.forEach(function(n){o+=srow(EI[n]||'🐾',n,'+'+(PP[n]||3)+' de dano em combate. Consome '+(PCST[n]||1)+' de comida por semana.'+(n==='Dragão'?' +1 de fama a cada 4 semanas.':''));});if(!pt.length)o+='<p class="sd">Nenhum companheiro. Domestique criaturas ao explorar ou compre no mercado negro.</p>';}
+ else{var pp=myPaths();pp.forEach(function(P){o+=srow(EIE[P.e],P.n,P.d+'<br>'+pathFx(P).join('<br>'));});if(!pp.length)o+='<p class="sd">Nenhum caminho escolhido ainda.</p>';}
+ return o;}
+function stTab(k){stab=k;stat();}
+function stat(){var b=$("stabs"),e=$("stat");if(!b||!e||!S.me||!S.me.tr)return;b.innerHTML=[['hab','Habilidades'],['bon','Bônus'],['pas','Passivas'],['art','Artefatos'],['pet','Companheiros'],['cam','Caminhos']].map(function(x){return'<button class="btn '+(stab===x[0]?'':'alt')+'" onclick="stTab(\''+x[0]+'\')">'+x[1]+'</button>';}).join('');e.innerHTML=stHtml();}
 function kin(p){var o=[];if(p.sx&&p.sx!=='me')o.push(p.sx);(p.pa||[]).forEach(function(i){o.push(i);});S.npcs.forEach(function(q){if(q.pa&&q.pa.indexOf(p.id)>=0)o.push(q.id);});return o.map(byId).filter(function(q){return q&&!q.dead;});}
 function npcHelp(p){var k=kin(p),f=(p.fr||[]).map(byId).filter(function(q){return q&&!q.dead;}),c=k.concat(f).filter(function(q){return q.w>50&&(q.t[2]>=30||rnd()<.4);});if(!c.length)return 0;var b=pk(c),fam=k.indexOf(b)>=0,am=b.t[2]>65?25:15;b.w-=am;p.w+=am;p.hu=0;p.hm=Math.max(0,(p.hm||0)-4);p.sa=Math.min(100,(p.sa||100)+10);rm(p,(fam?'Seu familiar ':'Seu amigo ')+b.n+' ajudou numa crise.');rm(b,'Ajudou '+p.n+' numa crise.');nlg(p,b.n+' ajudou '+(fam?'um familiar, ':'um amigo, ')+p.n+', numa crise.');return 1;}
 function npcLoan(p){if(p.db)return 0;var c=S.npcs.filter(function(q){return!q.dead&&q.id!==p.id&&q.age>=18&&q.w>100;});if(!c.length)return 0;var q=pk(c);p.w+=20;q.w-=20;p.db=q.t[0]>65?35:25;p.cr=q.id;rm(p,'Pegou um empréstimo com '+q.n+'.');rm(q,'Emprestou dinheiro a '+p.n+'.');nlg(p,p.n+' pegou um empréstimo com '+q.n+' para pagar o aluguel.');return 1;}
 function npcDebt(p){if(!p.db)return;var q=byId(p.cr);if(!q||q.dead){p.db=0;return;}
  if(p.w>=40&&rnd()<.3){var pay=Math.min(p.db,10);p.w-=pay;p.db-=pay;q.w+=pay;if(p.db<=0){p.db=0;rm(p,'Quitou a dívida com '+q.n+'.');nlg(p,p.n+' quitou a dívida com '+q.n+'.');}}
- else if((p.hm||0)>=14&&rnd()<.05){p.db=0;p.ri=p.ri||[];q.ri=q.ri||[];if(p.ri.indexOf(q.id)<0)p.ri.push(q.id);if(q.ri.indexOf(p.id)<0)q.ri.push(p.id);rm(p,'Não pagou a dívida com '+q.n+'.');rm(q,p.n+' não pagou a dívida.');nlg(p,p.n+' não pagou a dívida e virou rival de '+q.n+'.');}}
-function feud(p,rv){if(!rv.length||rnd()>=.015)return;var r=byId(pk(rv));if(!r||r.dead||r.w<=p.w)return;if(r.t[1]<30&&rnd()<.5)return;p.fe=p.fe||{};var l=(p.fe[r.id]=(p.fe[r.id]||0)+(r.t[1]>65?2:1));
+ else if((p.hm||0)>=14&&rnd()<.05*im()){p.db=0;p.ri=p.ri||[];q.ri=q.ri||[];if(p.ri.indexOf(q.id)<0)p.ri.push(q.id);if(q.ri.indexOf(p.id)<0)q.ri.push(p.id);rm(p,'Não pagou a dívida com '+q.n+'.');rm(q,p.n+' não pagou a dívida.');nlg(p,p.n+' não pagou a dívida e virou rival de '+q.n+'.');}}
+function feud(p,rv){if(!rv.length||rnd()>=.015*im())return;var r=byId(pk(rv));if(!r||r.dead||r.w<=p.w)return;if(r.t[1]<30&&rnd()<.5)return;p.fe=p.fe||{};var l=(p.fe[r.id]=(p.fe[r.id]||0)+(r.t[1]>65?2:1));
  if(l<3){p.w=Math.max(0,p.w-8);rm(p,'Foi prejudicado por seu rival '+r.n+'.');nlg(p,r.n+' prejudicou o rival '+p.n+' nos negócios.');}
  else if(l<5){var pw=(p.t[1]+rnd()*60)>(r.t[1]+rnd()*60),w=pw?p:r,x=pw?r:p;x.sa=(x.sa===undefined?100:x.sa)-20;x.w=Math.max(0,x.w-15);rm(w,'Venceu uma briga com '+x.n+'.');rm(x,'Perdeu uma briga com '+w.n+'.');nlg(p,w.n+' venceu uma briga pública contra '+x.n+'.');takeSides(w,x);}
- else{p.fe[r.id]=0;if(rnd()<.35){p.ri=(p.ri||[]).filter(function(i){return i!==r.id;});r.ri=(r.ri||[]).filter(function(i){return i!==p.id;});p.fr=p.fr||[];r.fr=r.fr||[];p.fr.push(r.id);r.fr.push(p.id);rm(p,'Fez as pazes com '+r.n+'.');rm(r,'Fez as pazes com '+p.n+'.');nlg(p,p.n+' e '+r.n+' fizeram as pazes.');}else{p.w=Math.max(0,p.w-20);r.w=Math.max(0,r.w-20);rm(p,'Foi multado pela guarda por brigar com '+r.n+'.');rm(r,'Foi multado pela guarda por brigar com '+p.n+'.');nlg(p,'A guarda multou '+p.n+' e '+r.n+' por brigas.');}}}
+ else{p.fe[r.id]=0;if(rnd()<.35){p.ri=(p.ri||[]).filter(function(i){return i!==r.id;});r.ri=(r.ri||[]).filter(function(i){return i!==p.id;});p.fr=p.fr||[];r.fr=r.fr||[];p.fr.push(r.id);r.fr.push(p.id);rm(p,'Fez as pazes com '+r.n+'.');rm(r,'Fez as pazes com '+p.n+'.');nlg(p,p.n+' e '+r.n+' fizeram as pazes.');}else{p.w=Math.max(0,p.w-20);r.w=Math.max(0,r.w-20);rm(p,'Foi multado pela guarda por brigar com '+r.n+'.');rm(r,'Foi multado pela guarda por brigar com '+p.n+'.');nlg(p,'A guarda multou '+p.n+' e '+r.n+' por brigas.');cvPush({k:'j',a:p.id,b:r.id});}}}
 function npcNeeds(p){
  if(p.sa===undefined){p.sa=100;p.ho=1;p.hm=0;}
  // moradia: sem dinheiro por muito tempo, perde a casa; com dinheiro, aluga outra
- if(p.w<15&&p.job!=='Criança')p.hm++;else if(p.w>=30)p.hm=0;
- if(!p.ho&&p.hm>=14&&!p.sx&&!kin(p).length&&rnd()<.08){p.dead=1;p.gone=1;rm(p,'Deixou a vila.');nlg(p,p.n+' deixou a vila em busca de uma vida melhor.');return 1;}
+ if(p.w<15*livx()&&p.job!=='Criança')p.hm++;else if(p.w>=30*livx())p.hm=0;
+ if(!p.ho&&p.hm>=14&&!p.sx&&!kin(p).length&&rnd()<.08*im()){p.dead=1;p.gone=1;rm(p,'Deixou a vila.');nlg(p,p.n+' deixou a vila em busca de uma vida melhor.');return 1;}
  if(p.ho&&p.hm>=10){p.ho=0;rm(p,'Perdeu a moradia.');nlg(p,p.n+' perdeu a moradia por falta de dinheiro.');}
- else if(!p.ho&&p.w>=30){p.ho=1;rm(p,'Alugou uma casa.');nlg(p,p.n+' conseguiu alugar uma casa.');}
+ else if(!p.ho&&p.w>=Math.round(30*livx())){p.ho=1;rm(p,'Alugou uma casa.');nlg(p,p.n+' conseguiu alugar uma casa.');}
  if((p.hu>=5||p.sa<40||p.hm>=8)&&rnd()<.2){if(!npcHelp(p)&&p.hm>=6)npcLoan(p);}
  npcDebt(p);
+ if(im()>1&&rnd()<.03)p.w=Math.max(0,p.w-6);else if(im()<1&&rnd()<.03)p.w+=4;
  // saúde: fome e falta de teto adoecem; dinheiro permite tratamento
  if(p.hu>=3||!p.ho)p.sa-=(p.ho?2:3);else if(p.sa<100)p.sa+=1;
- if(rnd()<.004){p.sa-=30;rm(p,'Adoeceu.');nlg(p,p.n+' adoeceu.');}
- if(p.sa<60&&p.w>=25&&rnd()<.2){p.w-=10;p.sa=Math.min(100,p.sa+35);rm(p,'Pagou um tratamento e melhorou.');nlg(p,p.n+' pagou um tratamento e melhorou.');}
- if(p.sa<=0){p.dead=1;lg(p.n+' morreu de doença e miséria.');if(p.sx==='me')S.me.sx=null;if(p.sx){var q0=byId(p.sx);if(q0)q0.sx=null;}p.sx=null;return 1;}
+ if(rnd()<.004*im()){p.sa-=30;rm(p,'Adoeceu.');nlg(p,p.n+' adoeceu.');}
+ if(p.sa<60&&p.w>=Math.round(10*PX('r')/100)+15&&rnd()<.2){p.w-=Math.round(10*PX('r')/100);p.sa=Math.min(100,p.sa+35);rm(p,'Pagou um tratamento e melhorou.');nlg(p,p.n+' pagou um tratamento e melhorou.');}
+ if(p.sa<=0){p.dead=1;lg(p.n+' morreu de doença e miséria.');inherit(p,1);if(p.sx==='me')S.me.sx=null;if(p.sx){var q0=byId(p.sx);if(q0)q0.sx=null;}p.sx=null;return 1;}
  // boato: a vila comenta a situação de alguém
  if(rnd()<.003){lg('Corre o boato de que '+p.n+' está '+nsit(p)+'.');}
  return 0;
 }
-function nsit(p){var h=p.hu||0;if(p.sa<40)return'doente';if(p.ho===0)return'sem moradia';if(p.db>0)return'endividado';return h>=4?'passando necessidade':p.w<20?'apertado':(p.fr||[]).length?'estável, com amigos':'estável, mas sozinho';}
+function nsit(p){var h=p.hu||0;if(p.rt&&!(p.hu>=4)&&p.ho!==0&&!(p.sa<40))return'aposentado';if(p.sa<40)return'doente';if(p.ho===0)return'sem moradia';if(p.db>0)return'endividado';return h>=4?'passando necessidade':p.w<20?'apertado':(p.fr||[]).length?'estável, com amigos':'estável, mas sozinho';}
 function nplan(p){return PLN[gl(p)]+' ('+Math.min(100,Math.round(p.pg||0))+'%)';}
 function npcLife(p){
  if(p.age<16||p.dead)return;
+ npcCosts(p);
  var g=gl(p),fr=p.fr||[],rv=p.ri||[];if(npcNeeds(p))return;
  // necessidade física: sem dinheiro, passa fome e age para sair do aperto
  if(p.w<10&&p.job!=="Criança")p.hu=(p.hu||0)+1;else p.hu=0;
@@ -562,7 +651,9 @@ function npcLife(p){
  // necessidade social: quem não tem amigos procura companhia
  if(!fr.length&&rnd()<.02){var c=S.npcs.filter(function(q){return!q.dead&&q.id!==p.id&&q.age>=16&&(q.fr||[]).indexOf(p.id)<0&&rv.indexOf(q.id)<0;});if(c.length){var q=pk(c);p.fr=p.fr||[];q.fr=q.fr||[];p.fr.push(q.id);q.fr.push(p.id);rm(p,'Fez amizade com '+q.n+'.');nlg(p,p.n+' procurou companhia e fez amizade com '+q.n+'.');}}
  // objetivo de família: quem sonha com isso procura um cônjuge de verdade
- if(g==='família'&&!p.sx&&p.age>=18&&rnd()<.04){var cs=S.npcs.filter(function(q){return!q.dead&&!q.sx&&q.id!==p.id&&q.age>=18&&Math.abs(q.age-p.age)<12&&q.sp===p.sp;});if(cs.length){var s=pk(cs);p.sx=s.id;s.sx=p.id;rm(p,'Casou-se com '+s.n+'.');rm(s,'Casou-se com '+p.n+'.');nlg(p,p.n+' e '+s.n+' se casaram.');}}
+ if(g==='família'&&!p.sx&&p.age>=18&&rnd()<.04){var cs=S.npcs.filter(function(q){return!q.dead&&!q.sx&&q.id!==p.id&&q.age>=18&&Math.abs(q.age-p.age)<12&&q.sp===p.sp;});if(cs.length){var s=pk(cs);p.sx=s.id;s.sx=p.id;rm(p,'Casou-se com '+s.n+'.');rm(s,'Casou-se com '+p.n+'.');nlg(p,p.n+' e '+s.n+' se casaram.');cvPush({k:'c',a:p.id,b:s.id});}}
+ if(!p.rt&&p.job!=='Criança'&&p.age>=SP[p.sp].max*.7&&rnd()<.015){p.rt=1;rm(p,'Aposentou-se.');if(!inherit(p,0))nlg(p,p.n+' se aposentou.');}
+ if(p.age>=SP[p.sp].max*.7&&p.rel>=10&&(S.week+p.id*7)%52===0)cvPush({k:'a',a:p.id});
  jobPick(p);
  // plano de longo prazo: avança toda semana e rende um marco ao completar
  p.pg=(p.pg||0)+(p.hu>=4||!p.ho||p.sa<40?.3:.9)+(p.t[0]>70?.4:0)+(p.t[3]>65&&(g==='estudo'||g==='aventura')?.3:0);
@@ -571,18 +662,19 @@ function npcLife(p){
   if(g==='riqueza'){var vr=rnd();if(vr<.6){p.w+=25;p.bz=1;p.bg=p.bg||hot();rm(p,'Expandiu os negócios.');nlg(p,p.n+' expandiu os negócios e enriqueceu.');}else if(vr<.85){p.w+=40;rm(p,'Fechou um grande contrato.');nlg(p,p.n+' fechou um grande contrato.');}else{p.w=Math.max(0,p.w-20);rm(p,'Perdeu dinheiro num mau negócio.');nlg(p,p.n+' perdeu dinheiro num mau negócio.');}}
   else if(g==='aventura'&&rnd()<.1){p.w+=70;rm(p,'Encontrou um tesouro.');nlg(p,p.n+' encontrou um tesouro numa expedição.');}
   else if(g==='aventura'){var ok=rnd()<.7;p.w+=ok?35:-20;rm(p,ok?'Voltou rico de uma expedição.':'Perdeu dinheiro numa expedição fracassada.');nlg(p,p.n+(ok?' voltou rico de uma expedição.':' perdeu dinheiro numa expedição fracassada.'));}
-  else if(g==='família'){if(p.sx&&p.sx!=='me'&&p.age<(SP[p.sp].max*.5)&&alive()<50&&p.id<p.sx&&rnd()<.5){var k=mk(0);k.job='Criança';k.pa=[p.id,p.sx];S.npcs.push(k);rm(p,'Teve um filho: '+k.n+'.');nlg(p,p.n+' teve um filho: '+k.n+'.');}else{p.w+=8;rm(p,'Dedicou-se à família.');}}
-  else if(rnd()<.3){p.job='Estudioso';p.w+=15;var di=S.npcs.filter(function(q){return!q.dead&&q.age>=16&&q.id!==p.id&&q.t[3]>55;});if(di.length){var d=pk(di);d.rel+=0;d.t[3]=Math.min(100,d.t[3]+3);rm(d,'Tornou-se discípulo de '+p.n+'.');rm(p,'Abriu uma escola e aceitou '+d.n+' como discípulo.');nlg(p,p.n+' abriu uma escola e aceitou '+d.n+' como discípulo.');}else{rm(p,'Abriu uma escola.');nlg(p,p.n+' abriu uma escola.');}}
+  else if(g==='família'){if(p.sx&&p.sx!=='me'&&p.age<(SP[p.sp].max*.5)&&alive()<popCap()-10&&p.id<p.sx&&rnd()<Math.min(1,.5*rtm())){var k=mk(0);k.job='Criança';k.pa=[p.id,p.sx];S.npcs.push(k);cvPush({k:'b',a:p.id,b:p.sx,c:k.id});rm(p,'Teve um filho: '+k.n+'.');nlg(p,p.n+' teve um filho: '+k.n+'.');}else{p.w+=8;rm(p,'Dedicou-se à família.');}}
+  else if(rnd()<.3){p.job='Estudioso';p.w+=15;var di=S.npcs.filter(function(q){return!q.dead&&q.age>=16&&q.id!==p.id&&q.t[3]>55;});if(di.length){var d=pk(di);p.di=d.id;d.t[3]=Math.min(100,d.t[3]+3);rm(d,'Tornou-se discípulo de '+p.n+'.');rm(p,'Abriu uma escola e aceitou '+d.n+' como discípulo.');nlg(p,p.n+' abriu uma escola e aceitou '+d.n+' como discípulo.');}else{rm(p,'Abriu uma escola.');nlg(p,p.n+' abriu uma escola.');}}
   else{p.job='Estudioso';p.w+=10;rm(p,'Escreveu um tratado.');nlg(p,p.n+' escreveu um tratado e ganhou respeito entre os estudiosos.');}
  }
  // rivalidades: o rival mais rico às vezes prejudica o outro
  feud(p,rv);
 }
-function newcomers(){if(alive()<50&&rnd()<.04){var k=mk(ri(18,45));k.w=ri(10,40);k.arr=1;rm(k,'Chegou à vila.');lg('Um recém-chegado, '+k.n+' ('+k.job+'), estabeleceu-se na vila.');S.npcs.push(k);}}
+function newcomers(){if(S.week%13===6)cvPush({k:'s'});if(alive()<popCap()-10&&rnd()<.04*rtm()){var k=mk(ri(18,45));k.w=ri(10,40);k.arr=1;rm(k,'Chegou à vila.');lg('Um recém-chegado, '+k.n+' ('+k.job+'), estabeleceu-se na vila.');S.npcs.push(k);}}
 function npcR(){var a=S.npcs.filter(function(p){return!p.dead&&p.age>=16;});return a.length?pk(a):null;}
 function dispSide(X,Y){return function(){X.rel+=8;Y.rel-=6;X.fe=X.fe||{};X.fe[Y.id]=0;Y.w=Math.max(0,Y.w-10);X.w+=10;rm(X,'Você tomou seu partido contra '+Y.n+'.');rm(Y,'Você apoiou '+X.n+' contra ele.');lg('Você apoiou '+X.n+' contra '+Y.n+'.');};}
 function dispMed(A,B){return function(){if(rnd()<.5){A.rel+=4;B.rel+=4;A.ri=(A.ri||[]).filter(function(i){return i!==B.id;});B.ri=(B.ri||[]).filter(function(i){return i!==A.id;});A.fr=A.fr||[];B.fr=B.fr||[];A.fr.push(B.id);B.fr.push(A.id);A.fe={};B.fe={};rm(A,'Você o reconciliou com '+B.n+'.');rm(B,'Você o reconciliou com '+A.n+'.');lg('Você reconciliou '+A.n+' e '+B.n+'.');}else{A.rel-=2;B.rel-=2;S.me.en-=5;lg('Sua mediação entre '+A.n+' e '+B.n+' fracassou.');}};}
 var EVS=[
+cvEvent,cvEvent,cvEvent,
 function(){var pr=[];S.npcs.forEach(function(p){if(p.dead||!p.fe)return;(p.ri||[]).forEach(function(id){var r=byId(id);if(r&&!r.dead&&p.fe[id]>=2)pr.push([p,r]);});});if(!pr.length)return null;var d=pk(pr),A=d[0],B=d[1];return{x:'Disputa entre '+A.n+' e '+B.n,d:A.n+' e '+B.n+' estão em guerra aberta e cada um pede seu apoio.',o:[{l:'Apoiar '+A.n,f:dispSide(A,B)},{l:'Apoiar '+B.n,f:dispSide(B,A)},{l:'Mediar',f:dispMed(A,B)}]};},
 function(){var a=S.npcs.filter(function(p){var q=byId(p.cr);return!p.dead&&p.db>0&&q&&!q.dead;});if(!a.length)return null;var p=pk(a),q=byId(p.cr),M=S.me;return{x:q.n+' cobra '+p.n,d:q.n+' quer receber os '+p.db+' que '+p.n+' deve e pede seu apoio.',o:[{l:'Pagar parte pelo devedor (15)',f:function(){if(M.m>=15){M.m-=15;p.db=Math.max(0,p.db-15);q.w+=15;p.rel+=8;q.rel+=3;rm(p,'Você pagou parte da dívida dele.');lg('Você pagou parte da dívida de '+p.n+'.');}else lg('Faltou dinheiro para ajudar '+p.n+'.');}},{l:'Apoiar o credor',f:function(){q.rel+=6;p.rel-=6;p.w=Math.max(0,p.w-10);q.w+=10;p.db=Math.max(0,p.db-10);rm(p,'Você apoiou a cobrança de '+q.n+'.');lg('Você apoiou '+q.n+' na cobrança a '+p.n+'.');}},{l:'Não se meter',f:function(){lg('Você não se meteu na cobrança.');}}]};},
 function(){var a=S.npcs.filter(function(p){return!p.dead&&p.age>=16&&p.sx!=='me'&&(p.hu>=4||p.ho===0||p.pg>=50);});if(!a.length)return null;var p=pk(a),g=gl(p),M=S.me;
@@ -601,12 +693,12 @@ function(){var a=S.npcs.filter(function(p){return!p.dead&&p.ri&&p.ri.length;});i
 function choose(i){var o=pend.o[i],p0=pend;o.f();cm();if(pend===p0)pend=null;if(S.me.h<=0)S.over=["Você morreu","A saúde chegou a zero."];save();draw();}
 function pick(id){S.sel=id;draw();}
 function pj(id){S.selJ=id;draw();}
-function draw(){
+function draw(){chkNew();stat();mlabel();notable();report();
   var m=S.me,y=1+Math.floor(S.week/52),w=S.week%52+1,se=["Primavera","Verão","Outono","Inverno"][Math.floor((w-1)/13)];
   $("cal").textContent="Ano "+y+", semana "+w+" ("+se+"). Comida: "+pr()+" por semana. Senhor da vila: "+(S.lord==="me"?"você":(lo()?lo().n:"ninguém"))+".";
   $("me").innerHTML='<div class="row"><div class="pt" style="background:hsl('+m.hue+',45%,40%)">'+m.n[0]+'</div><div><h2>'+m.n+'</h2><small>'+m.sp+', '+m.age+' anos</small></div></div><div style="margin-top:8px"><div class="kv"><span>Origem</span><span>Família '+CL[m.cl].toLowerCase()+'</span></div><div class="kv"><span>Religião</span><span>'+m.rg+'</span></div><div class="kv"><span>Ofício</span><span>'+m.job+(m.job==="Desempregado"?"":" ("+RK[m.rk||0]+")")+'</span></div><div class="kv"><span>Cônjuge</span><span>'+(m.sx&&byId(m.sx)?byId(m.sx).n:"ninguém")+'</span></div><div class="kv"><span>Título</span><span>'+TI[m.ti||0]+'</span></div><div class="kv"><span>Cargo</span><span>'+OF[m.of||0]+'</span></div><div class="kv"><span>Fama</span><span>'+(m.fm||0)+'</span></div><div class="kv"><span>Caminhos</span><span>'+((m.pa||[]).filter(Boolean).map(function(id){return PA.find(function(x){return x.id===id;}).n;}).join(", ")||"nenhum")+'</span></div><div class="kv"><span>Técnicas próprias</span><span>'+((m.tq||[]).map(function(q){return q.n;}).join(", ")||"nenhuma")+'</span></div><div class="kv"><span>Submundo</span><span>'+(m.sb||0)+(m.ht>0?", procurado "+m.ht:"")+(m.gg?", rede nv "+m.gg:"")+'</span></div><div class="kv"><span>Favores políticos</span><span>'+(m.fv||0)+'</span></div><div class="kv"><span>Servos</span><span>'+(m.sv||0)+'</span></div><div class="kv"><span>Artefatos raros</span><span>'+((m.ra||[]).join(", ")||"nenhum")+'</span></div><div class="kv"><span>Influências</span><span>'+INF.map(function(x){return x[2]+" "+infVal(x[0]);}).join(", ")+'</span></div><div class="kv"><span>Poder</span><span>'+(S.lord==="me"?"Governante":"nenhum")+'</span></div><div class="kv"><span>Guilda</span><span>'+(m.gd?m.gd.n+" nv "+m.gd.lv:"nenhuma")+'</span></div><div class="kv"><span>Equipe</span><span>'+((m.st||[]).map(function(s){var p=byId(s.id);return p?p.n+" ("+ORD[s.o]+")":"";}).join(", ")||"ninguém")+'</span></div><div class="kv"><span>Companheiros</span><span>'+((m.pets||[]).join(", ")||"nenhum")+'</span></div><div class="kv"><span>Filhos</span><span>'+S.npcs.filter(function(p){return p.pf&&!p.dead;}).length+'</span></div><div class="kv"><span>Dinheiro</span><span>'+m.m+'</span></div><div class="kv"><span>Saúde</span><span>'+m.h+'</span></div><div class="kv"><span>Fôlego (esforço físico)</span><span>'+m.en+'</span></div><div class="kv"><span>Conhecimento</span><span>'+m.k+'</span></div><div class="kv"><span>Habilidade no ofício</span><span>'+m.sk+'</span></div></div><h2 style="margin-top:10px">Negócios e contatos</h2><div class="kv"><span>Negócios</span><span>'+(m.biz.length?m.biz.map(function(b){return b.t+" nv "+(b.lv||1);}).join(", "):"nenhum")+'</span></div><div class="kv"><span>Contatos comerciais</span><span>'+m.ct.length+'</span></div><h2 style="margin-top:10px">Energias e habilidades</h2>'+EN.map(function(e,i){return'<div class="kv"><span>'+e+' (nível '+lvl(i)+'), reserva '+ee()[i]+'/'+emax(i)+'</span><span>'+(m.rev[i]?"aptidão "+lv(m.ap[i]):"aptidão oculta")+', treino '+m.tr[i]+capR(i)+'</span></div>'+SK[i].map(function(s,j){return'<div style="font-size:.85rem;color:'+(lvl(i)>j?"var(--ink)":"var(--mute)")+';padding:1px 0 1px 8px">'+(lvl(i)>j?"✓ "+s[0]+": "+s[1]:"Nível "+(j+1)+": bloqueada")+'</div>';}).join("");}).join("");
   var l=S.npcs.slice().sort(function(a,b){return a.dead-b.dead||b.rel-a.rel;});
-  $("city").innerHTML=l.map(function(p){return'<button class="np'+(S.sel===p.id?" sel":"")+(p.dead?" dead":"")+'" onclick="pick('+p.id+')"><div class="pt" style="background:hsl('+p.hue+',45%,40%)">'+p.n[0]+'</div><div>'+TT[p.nb||0]+p.n+(p.dead?" (falecido)":"")+'<small>'+p.job+', '+p.age+' anos</small></div><span class="r">'+af(p.rel)+' ('+p.rel+')</span></button>';}).join("");
+  $("city").innerHTML=l.map(function(p){return'<button class="np'+(S.sel===p.id?" sel":"")+(p.dead?" dead":"")+'" onclick="pick('+p.id+')"><div class="pt" style="background:hsl('+p.hue+',45%,40%)">'+p.n[0]+'</div><div>'+TT[p.nb||0]+p.n+(p.dead?(p.gone?" (partiu da vila)":" (falecido)"):"")+'<small>'+p.job+', '+p.age+' anos</small></div><span class="r">'+af(p.rel)+' ('+p.rel+')</span></button>';}).join("");
   var n=S.sel?byId(S.sel):null,sp=n&&n.sx?byId(n.sx):null;
   $("npc").innerHTML=n?'<h2>'+TT[n.nb||0]+n.n+'</h2><div class="kv"><span>Afeto por você</span><span>'+af(n.rel)+' ('+n.rel+')</span></div><div class="bar"><i style="width:'+Math.max(0,Math.min(100,Math.round((n.rel+50)*100/150)))+'%"></i></div><div class="kv"><span>Espécie</span><span>'+n.sp+(n.pf?' (seu filho)':'')+'</span></div><div class="kv"><span>Ofício</span><span>'+n.job+'</span></div><div class="kv"><span>Posses</span><span>'+(n.w<20?"poucas":n.w<60?"remediado":"abastado")+'</span></div><div class="kv"><span>Cônjuge</span><span>'+(n.sx==="me"?"você":sp?sp.n:"ninguém")+'</span></div>'+((n.rel>=20||n.kn)?n.t.map(function(v,i){return'<div class="kv"><span>'+TN[i]+'</span><span>'+lv(v)+'</span></div>';}).join("")+'<div class="kv"><span>Objetivo de vida</span><span>'+gl(n)+(n.bz?', com negócio próprio':'')+'</span></div><div class="kv"><span>Situação</span><span>'+nsit(n)+'</span></div><div class="kv"><span>Plano</span><span>'+nplan(n)+'</span></div><div class="kv"><span>Amigos</span><span>'+nm(n.fr)+'</span></div><div class="kv"><span>Rivais</span><span>'+nm(n.ri)+'</span></div>'+((n.mem||[]).length?'<p style="color:var(--mute)">Histórico:<br>'+n.mem.slice().reverse().join('<br>')+'</p>':''):'<p style="color:var(--mute)">Você ainda conhece pouco esta pessoa. Passe tempo com ela para saber mais.</p>'):'<h2>Pessoa</h2><p style="color:var(--mute)">Selecione alguém na lista.</p>';
   $("log").innerHTML=S.log.slice(0,25).map(function(x){return"<li>"+x+"</li>";}).join("");
@@ -624,7 +716,7 @@ function save(v){try{if(!pend&&!S.cb){localStorage.setItem(KEY,JSON.stringify(S)
 function exp(){$("bk").value=JSON.stringify(S);$("bk").select();}
 function imp(){try{var o=JSON.parse($("bk").value);if(!o||!o.me||!o.npcs||o.v!==2)throw 1;S=o;pend=null;msg("");draw();}catch(e){msg("Save inválido. Cole o texto exportado completo.");}}
 function nw(){var b=$("nw");if(!nwc){nwc=1;b.textContent="Confirmar: apaga o atual";return;}nwc=0;b.textContent="Novo personagem";pend=null;newGame();save();draw();}
-function auto(){var b=$("auto");if(timer){clearInterval(timer);timer=null;b.textContent="Tempo automático: desligado";}else{b.textContent="Tempo automático: ligado";timer=setInterval(function(){if(!pend&&!S.over&&!S.cb){var c=$("act").value;if(c==="soc"||c==="help"){if(!S.sel)return;}step();}},1500);}}
+function auto(){var b=$("auto");if(timer){clearInterval(timer);timer=null;b.textContent="Tempo automático: desligado";}else{b.textContent="Tempo automático: ligado";timer=setInterval(function(){if(!pend&&!S.over&&!S.cb&&!cardOpen){var c=$("act").value;if(c==="soc"||c==="help"){if(!S.sel)return;}step();}},1500);}}
 /* ===== v3: mundo vivo ===== */
 var XP=null,NA={};
 var RV={'Humano|Elfo':0,'Humano|Anão':5,'Humano|Povo-fera':-8,'Elfo|Anão':-10,'Elfo|Povo-fera':6,'Anão|Povo-fera':-5};
@@ -640,7 +732,7 @@ function imm(sp,from){var n=mk(ri(16,45));n.sp=sp;n.rel=Math.max(-10,bias(n));S.
 function arrive(p){var w=W(),k=w.kg[p.k],m=S.me;return{x:'Chegada a '+p.n,d:'Território de '+k.n+' ('+k.sp+'). Relação do reino com você: '+k.rel+(k.wr?' (EM GUERRA)':k.al?' (aliado)':'')+'.',o:[
  ob('Comerciar (investir 30)',function(){if(m.m<30){lg('Sem dinheiro para comerciar em '+p.n+'.');return;}lm(30);var g=Math.round(ri(20,90)*(k.rel>=0?1.3:.8));m.m+=g;lg('Comerciou em '+p.n+' e recebeu '+g+'.');}),
  ob('Conversar com os locais',function(){m.k+=2;k.rel=Math.min(100,k.rel+2);lg('Ouviu rumores em '+p.n+'.');if(rnd()<.45)disc();}),
- ob('Convidar alguém a mudar-se para Aldeburgo',function(){if(S.npcs.length>=70){lg('Aldeburgo está cheia.');return;}imm(k.sp,p.n);k.rel+=1;}),
+ ob('Convidar alguém a mudar-se para Aldeburgo',function(){if(S.npcs.length>=popCap()+10){lg('Aldeburgo está cheia.');return;}imm(k.sp,p.n);k.rel+=1;}),
  ob('Estudar com um mestre local (20)',function(){if(m.m<20){lg('Sem dinheiro para a lição.');return;}lm(20);var e=ri(0,3);m.tr[e]+=4;m.k+=2;lg('Aprendeu '+EN[e]+' com um mestre de '+p.n+'.');}),
  ob('Partir',function(){lg('Partiu de '+p.n+'.');})]};}
 NA.travel=function(){var p=W().pl[+$('pl').value];if(!p||!p.f){msg('Escolha um lugar já descoberto.');return false;}var m=S.me;if(m.en<15||m.m<10){msg('Viajar custa 10 de dinheiro e 15 de fôlego.');return false;}m.en-=15;lm(10);
@@ -708,7 +800,7 @@ function tick(){var w=W(),m=S.me,d=S.dc=S.dc||{tx:1},al=aliveN(),i;
  if(S.lw&&S.lw.ser===1)w.rr['Povo-fera']=Math.max(0,w.rr['Povo-fera']-.4);if(S.lw&&S.lw.ser===0)w.rr['Povo-fera']=Math.min(100,w.rr['Povo-fera']+.2);
  SPN.forEach(function(s){w.rr[s]+=(50+(s===m.sp?Math.min(20,(m.fm||0)/3):0)-w.rr[s])*.01;});
  al.forEach(function(p){p.w=Math.max(0,p.w+1-d.tx);var tg=bias(p)*3;if(rnd()<.3)p.rel=Math.max(-100,Math.min(100,p.rel+(tg>p.rel?1:tg<p.rel?-1:0)));});
- if(S.npcs.length<70&&rnd()<.03+w.md/1500){var sp=pk(SPN.filter(function(s){return rnd()*100<w.rr[s]+20;}).concat(['Humano']));imm(sp);}
+ if(S.npcs.length<popCap()+10&&rnd()<.03+w.md/1500){var sp=pk(SPN.filter(function(s){return rnd()*100<w.rr[s]+20;}).concat(['Humano']));imm(sp);}
  if(w.md<30&&rnd()<.04){var ex=al.filter(function(p){return!p.pf&&!p.hb&&p.id!==m.sx&&p.age>=18&&p.id!==S.lord;});if(ex.length){var e=pk(ex);S.npcs=S.npcs.filter(function(x){return x!==e;});lg(e.n+' deixou Aldeburgo, descontente com a situação.');}}
  w.kg.forEach(function(k){if(!k.f)return;k.rel=Math.max(-100,Math.min(100,k.rel+(k.al?.3:0)+(rnd()<.03?ri(-8,8):0)));if(k.wr>0){m.m=Math.max(0,m.m-3);w.md-=.5;if(rnd()<.03){var v=pk(aliveN().filter(function(p){return p.age>=18&&p.age<50&&p.sx!=='me';}));if(v){v.dead=1;lg(v.n+' morreu na guerra contra '+k.n+'.');}}k.wr--;if(!k.wr){lg('A guerra com '+k.n+' terminou.');k.rel=-10;}}else if(k.rel>=40&&m.biz.length)m.m+=3;
   if(k.rel<=-40&&!k.wr&&!k.al&&rnd()<.03){w.cs.push({due:S.week,k:0,war:k});}});
@@ -748,7 +840,7 @@ var _ce=cbEnd;cbEnd=function(){var c=S.cb;if(c&&c.e.hp<=0&&hum(c.e.n)){S.me.kh=(
 var _s3=step;step=function(){var a=$('act').value,w0=S.week;_s3();if(S.week>w0&&a){var m=S.me;m.ac=m.ac||{};m.ac[a]=(m.ac[a]||0)+1;chkP();draw();}};
 function exp1(n){var m=S.me,T=[
 ['Trilha bloqueada','Árvores caídas fecham o caminho.',[['Abrir à força (10 de fôlego)',function(){m.en-=10;if(rnd()<.6)lg('Abriu caminho.');else{m.h-=8;lg('Se feriu abrindo caminho.');}}],['Procurar um atalho',function(){if(rnd()<.4+(nt('percepcao')?.3:0))lg('Achou um atalho.');else{m.en-=10;lg('O atalho não levou a nada.');}}]]],
-['Acampamento de viajantes','Mercadores e andarilhos dividem uma fogueira.',[['Negociar',function(){var g=ri(10,50);m.m+=g;lg('Negociou no acampamento: +'+g+'.');}],['Ouvir histórias',function(){m.k+=2;if(rnd()<.4)revM();else lg('As histórias renderam conhecimento.');}],['Convidar um guia para Aldeburgo',function(){if(S.npcs.length<70)imm(pk(SPN),'a estrada');}]]],
+['Acampamento de viajantes','Mercadores e andarilhos dividem uma fogueira.',[['Negociar',function(){var g=ri(10,50);m.m+=g;lg('Negociou no acampamento: +'+g+'.');}],['Ouvir histórias',function(){m.k+=2;if(rnd()<.4)revM();else lg('As histórias renderam conhecimento.');}],['Convidar um guia para Aldeburgo',function(){if(S.npcs.length<popCap()+10)imm(pk(SPN),'a estrada');}]]],
 ['Criatura territorial','Algo grande vigia a clareira.',[['Enfrentar',function(){foe('wild',pk(CR));}],['Contornar',function(){lg('Contornou a criatura.');}],['Tentar domesticar',function(){wild0().o[2].f();}]]],
 ['Ruínas esquecidas','Um santuário surge entre as raízes.',[['Entrar',function(){pend=ruins();}],['Seguir adiante',function(){lg('Deixou as ruínas para trás.');}]]],
 ['Tempestade','O céu fecha de repente.',[['Abrigar-se',function(){m.en+=10;lg('Esperou a tempestade passar.');}],['Seguir adiante',function(){m.h-=10;m.k+=1;if(rnd()<.5)disc();}]]],
@@ -838,7 +930,7 @@ var INS=['Dojo','Torre da Magia','Templo','Círculo da Natureza'],ITN=[['Manual 
 function insL(){return(S.me.ins=S.me.ins||[null,null,null,null]);}
 function insS(){var e=+$('pl').value;return insL()[e]?e:-1;}
 NA.found=function(){var e=+$('pl').value,m=S.me,I=insL();if(I[e]){msg('Você já tem uma instituição desta energia.');return false;}if(lvl(e)<3||m.k<15||m.m<200){msg('Exige '+EN[e]+' nível 3, conhecimento 15 e 200 de dinheiro.');return false;}m.m-=200;I[e]={n:INS[e]+' '+pk(S1)+pk(S2),lv:1,rep:0,st:2,sec:0};fa(3);lg('Fundou '+I[e].n+'.');return true;};
-NA.teach=function(){var e=insS(),m=S.me;if(e<0){msg('Escolha uma instituição sua.');return false;}var I=insL()[e];m.en-=10;var b=(m.tq||[]).filter(function(t){return t.e===e;}).length,g=Math.round(I.lv*8+I.st*2+b*6);m.m+=g;I.rep+=2+b;I.st=Math.min(I.lv*8,I.st+ri(0,2));m.k+=1;lg('Ensinou na '+I.n+' (+'+g+', '+I.st+' alunos'+(b?', usando suas técnicas':'')+').');if(rnd()<.15&&S.npcs.length<70){var n=imm(pk(SPN),I.n);n.rel=Math.max(n.rel,50);}return true;};
+NA.teach=function(){var e=insS(),m=S.me;if(e<0){msg('Escolha uma instituição sua.');return false;}var I=insL()[e];m.en-=10;var b=(m.tq||[]).filter(function(t){return t.e===e;}).length,g=Math.round(I.lv*8+I.st*2+b*6);m.m+=g;I.rep+=2+b;I.st=Math.min(I.lv*8,I.st+ri(0,2));m.k+=1;lg('Ensinou na '+I.n+' (+'+g+', '+I.st+' alunos'+(b?', usando suas técnicas':'')+').');if(rnd()<.15&&S.npcs.length<popCap()+10){var n=imm(pk(SPN),I.n);n.rel=Math.max(n.rel,50);}return true;};
 NA.upins=function(){var e=insS(),m=S.me;if(e<0){msg('Escolha uma instituição sua.');return false;}var I=insL()[e],c=150*I.lv;if(I.lv>=4){msg('Já está no nível máximo.');return false;}if(m.m<c){msg('Ampliar custa '+c+'.');return false;}m.m-=c;I.lv++;fa(2);lg(I.n+' foi ampliada (nível '+I.lv+').');return true;};
 NA.invent=function(){var e=insS(),m=S.me;if(e<0){msg('Escolha uma instituição sua.');return false;}if(m.m<20||m.en<15){msg('Custa 20 de dinheiro e 15 de fôlego.');return false;}m.m-=20;m.en-=15;var I=insL()[e];
  XP=function(){openGame(GK[e],'Desenvolver '+ITN[e][0].toLowerCase()+' / '+ITN[e][1].toLowerCase(),function(s){var nm=ITN[e][ri(0,1)]+(s<.4?' tosco':s<.75?' fino':' primoroso'),v=Math.round(40+s*140+I.lv*20);
@@ -1242,7 +1334,7 @@ function houseSplit(){var w=W(),F=w.fh;if(F.length>=9)return;var pi=0;F.forEach(
  var N={n:'Casa '+pk(S1)+pk(S2),sp:P.sp,c:P.c,g:P.g,p:P.p,bm:rnd()<.4?1:0,t:P.t.slice(0,2),rq:[],r:ri(-5,10),f:P.f,pt:0,dw:0,pw:40,gen:1};P.pw-=25;F.push(N);fxa(pi,F.length-1,-20);chr('A '+P.n+' se dividiu: nasce a '+N.n+'.');}
 function newKing(){var w=W(),sp=pk(SPN),nm='Reino de '+pk(S1)+pk(S2);w.kg.push({n:nm,sp:sp,rel:ri(-10,10),f:0,al:0,wr:0,pw:40});w.pl.push({n:'Vila '+pk(S1)+pk(S2),k:w.kg.length-1,d:ri(3,5),f:0});chr('Rumores: uma revolta fundou um novo reino além das fronteiras.');}
 function npcMaster(){var p=pk(aliveN().filter(function(x){return x.age>=25&&!x.mt;}));if(!p)return;p.mt=1;chr(p.n+' abriu uma escola e virou mestre local.');revM();}
-function townGrow(){var w=W();if(w.md>=60){newOp();newOp();if(S.npcs.length<70)imm(pk(SPN));chr('Aldeburgo prosperou: novas vagas e novos moradores.');}else if(w.md<35){var ex=aliveN().filter(function(p){return!p.pf&&!p.hb&&p.id!==S.me.sx&&p.id!==S.lord&&p.age>=18;});if(ex.length){var e=pk(ex);S.npcs=S.npcs.filter(function(x){return x!==e;});chr('Aldeburgo encolheu: '+e.n+' partiu em busca de dias melhores.');}}}
+function townGrow(){var w=W();if(w.md>=60){newOp();newOp();if(S.npcs.length<popCap()+10)imm(pk(SPN));chr('Aldeburgo prosperou: novas vagas e novos moradores.');}else if(w.md<35){var ex=aliveN().filter(function(p){return!p.pf&&!p.hb&&p.id!==S.me.sx&&p.id!==S.lord&&p.age>=18;});if(ex.length){var e=pk(ex);S.npcs=S.npcs.filter(function(x){return x!==e;});chr('Aldeburgo encolheu: '+e.n+' partiu em busca de dias melhores.');}}}
 function wAuto(){var w=W(),F=w.fh,m=S.me,i,j,wk=S.week;F.forEach(function(h){if(h.pw===undefined)h.pw=40+ri(0,30);h.pw=Math.max(10,Math.min(120,h.pw+(rnd()<.2?ri(-2,3):0)));if(wk%52===0)h.gen=(h.gen||1)+1;});if(w.kr===undefined)w.kr=0;w.kg.forEach(function(k){if(k.pw===undefined)k.pw=50+ri(0,30);});
  if(m.hm!==undefined&&m.hm!==null&&F[m.hm])m.m+=3+Math.floor(F[m.hm].pw/20);
  if(wk%40===17)kgWar();if(wk%60===11)houseGrow();if(wk%100===50)houseSplit();if(wk%120===30)newKing();if(wk%50===25)npcMaster();if(wk%26===13)townGrow();
@@ -1277,7 +1369,7 @@ var _pd5=pdm;pdm=function(){return _pd5()+(eraI()===3?.1:0);};
 var _tk8=tick;tick=function(){_tk8();var m=S.me,w=W(),ei=eraI();
  if(w.eraI!==ei){w.eraI=ei;chr('Começou a '+ERA[ei][0]+': '+ERA[ei][1]+'.');}
  if(ei===0)w.md=Math.min(100,w.md+.3);
- if(ei===1){if(rnd()<.04&&S.npcs.length<70)imm(pk(SPN));if(S.week%40===9)revD();}
+ if(ei===1){if(rnd()<.04&&S.npcs.length<popCap()+10)imm(pk(SPN));if(S.week%40===9)revD();}
  if(ei===2&&S.week%6===1&&rnd()<.5)kgWar();
  if(S.week%60===29)revD();
  HY.forEach(function(h){m.hy=m.hy||[];if(m.hy.indexOf(h[2])<0&&hyOk(h)){m.hy.push(h[2]);lg('Desbloqueou: '+h[2]+' (ressonância entre '+EN[h[0]]+' e '+EN[h[1]]+').');}});
@@ -1285,7 +1377,35 @@ var _tk8=tick;tick=function(){_tk8();var m=S.me,w=W(),ei=eraI();
 var _cu=cbUpd;cbUpd=function(){_cu();var c=S.cb,t=document.getElementById('cbt');if(c&&t&&nt('percepcao')>0){var tg=mon(c.e.n).tg;t.textContent+=' — fraco a: '+Object.keys(EL).filter(function(k){return EL[k].a.indexOf(tg)>=0;}).join(', ');}};
 var _dr9=draw;draw=function(){_dr9();var el=$('wp'),m=S.me;if(!el)return;el.insertAdjacentHTML('beforeend','<div class="kv"><span>Era do mundo</span><span>'+ERA[eraI()][0]+'</span></div>'+(m.hm!==undefined&&m.hm!==null&&W().fh[m.hm]?'<div class="kv"><span>Posto na '+W().fh[m.hm].n+'</span><span>'+HRN[Math.min(3,Math.floor((m.hr||0)/3))]+'</span></div>':''));};
 
+
+/* ===== v4: comércio entre vilas e reinos, tratamento e decretos de preço ===== */
+var EXB=['Barraca','Oficina','Ferraria','Alquimia','Loja','Caravana','Mensageria','Casa de Câmbio'];
+function isMerc(m){return m.job==='Comerciante'||m.job==='Mercador da Guilda';}
+function blv(m,t){return m.biz.filter(function(b){return b.t===t;}).reduce(function(a,b){return a+(b.lv||1);},0);}
+function rgx(key){S.rg=S.rg||{};if(!S.rg[key]){var f=function(){return+(.75+rnd()*.6).toFixed(2);};S.rg[key]={f:f(),t:f(),l:f(),r:f(),s:{f:0,t:0,l:0,r:0}};}return S.rg[key];}
+function dpx(key,g){var r=rgx(key);return Math.round(PX(g)*r[g]*(1-r.s[g]));}
+function destList(){var w=W(),o=[];w.pl.forEach(function(p,i){if(p.f)o.push({key:'p'+i,n:p.n+' ('+w.kg[p.k].n+')',k:p.k,d:p.d,war:w.kg[p.k].wr});});w.kg.forEach(function(k,i){if(k.f)o.push({key:'k'+i,n:k.n+' (reino)',k:i,d:5,war:k.wr});});return o;}
+function dest(v){return destList().filter(function(d){return d.key===v;})[0]||null;}
+function exTar(d){var k=W().kg[d.k],m=S.me,b;if(d.k===0)b=.03;else if(k.al)b=0;else if(k.rel>=30)b=.05;else if(k.rel>=0)b=.1;else if(k.rel>=-20)b=.18;else b=.25;return blv(m,'Casa de Câmbio')?b/2:b;}
+function exRisk(d){var m=S.me,r=.08+.03*d.d-(isMerc(m)?.04:0)-Math.min(.1,.05*blv(m,'Caravana'))-(blv(m,'Mensageria')?.04:0);return Math.max(.02,Math.min(.5,r));}
+function excap(){var m=S.me,c=100*(isMerc(m)?1.5:1)*(1+.5*blv(m,'Caravana'));return Math.round(c);}
+function regHtml(){var ds=destList();if(!ds.length)return'';return'<p class="sd" style="margin:6px 0 2px">Preços em outras vilas e reinos (comida, ferramentas, luxo, remédios):</p>'+ds.map(function(d){return'<div class="kv"><span>'+d.n+(d.war?' (em guerra)':'')+'</span><span>'+['f','t','l','r'].map(function(g){return dpx(d.key,g);}).join(' / ')+' · tarifa '+Math.round(exTar(d)*100)+'%</span></div>';}).join('');}
+function rgDrift(){if(!S.rg)return;Object.keys(S.rg).forEach(function(k){var r=S.rg[k];['f','t','l','r'].forEach(function(g){r[g]=+Math.max(.65,Math.min(1.45,r[g]+(1-r[g])*.04+ri(-3,3)/100)).toFixed(2);r.s[g]=+(r.s[g]*.95).toFixed(3);});});}
+var _ec2=econ;econ=function(){_ec2();rgDrift();};
+ACTS.push({v:'export',c:'Negócios',n:'Enviar mercadorias a outra vila ou reino',d:'Vende o estoque do item escolhido no destino escolhido, a preço local menos a tarifa. Exige ofício de comerciante ou um negócio de comércio. Escolha o item e o destino abaixo.'},{v:'treat',c:'Trabalho',n:'Pagar um tratamento de saúde',d:'Recupera saúde. O preço acompanha o dos remédios.'});
+AV.export=function(m){return isMerc(m)||m.biz.some(function(b){return EXB.indexOf(b.t)>=0;});};
+AV.treat=function(m){return m.h<90;};
+NA.treat=function(){var m=S.me,c=Math.round(12*PX('r')/100);if(m.m<c){msg('O tratamento custa '+c+'.');return false;}lm(c);m.h=Math.min(100,m.h+25);lg('Pagou '+c+' por um tratamento e recuperou saúde.');return true;};
+NA.export=function(){var m=S.me,g=$('gd').value,d=dest($('pl').value);if(!d){msg('Escolha um destino descoberto.');return false;}m.gs=m.gs||{};var st=m.gs[g]||0;if(st<=0){msg('Você não tem estoque de '+GN[g].toLowerCase()+'. Compre um lote antes.');return false;}if(d.war){msg('Esse reino está em guerra com você: as estradas estão fechadas.');return false;}if(m.en<15||m.m<10){msg('A viagem custa 10 de dinheiro e 15 de fôlego.');return false;}
+ m.en-=15;lm(10);var q=Math.min(st,excap());m.gs[g]=st-q;
+ if(rnd()<exRisk(d)){var lost=Math.round(q*(.3+rnd()*.3));q-=lost;lg('Bandidos atacaram a caravana a caminho de '+d.n+' e levaram '+Math.round(lost*PX(g)/100)+' em mercadorias.');if(q<=0)return true;}
+ var r=rgx(d.key),own=m.biz.some(function(b){return BG[b.t]===g;})?1.1:1,px=Math.round(dpx(d.key,g)*own*(isMerc(m)?1.1:1)),gross=Math.round(q*px/100),tar=Math.round(gross*exTar(d)),net=gross-tar,loc=Math.round(q*PX(g)/100);
+ m.m+=net;r.s[g]=Math.min(.35,r.s[g]+q/400);if(d.k>0){var k=W().kg[d.k];k.rel=Math.min(100,k.rel+1);}
+ lg('Vendeu '+GN[g].toLowerCase()+' em '+d.n+' por '+net+' (índice local '+px+', tarifa '+Math.round(exTar(d)*100)+'%). No mercado da vila renderia '+loc+'.');return true;};
+var _rx=renderActs;renderActs=function(){_rx();if($('act').value==='export'){var h='';destList().forEach(function(d){h+='<option value="'+d.key+'">'+d.n+(d.war?' (em guerra)':'')+' — '+['f','t','l','r'].map(function(g){return dpx(d.key,g);}).join('/')+', tarifa '+Math.round(exTar(d)*100)+'%</option>';});var pl=$('pl');if(pl.dataset.k!=='export'+h){pl.innerHTML=h;pl.dataset.k='export'+h;}pl.style.display=h?'block':'none';$('gd').style.display='block';}};
+DC.push(['subf','Subsidiar a comida (-15% no preço; custa à tesouraria)'],['subr','Subsidiar remédios (-15% no preço; custa à tesouraria)'],['taxl','Taxar artigos de luxo (+10% no preço; rende à tesouraria)']);
+var _ru=rule;rule=function(){_ru();if(S.lord!=='me')return;var d=S.dc||{},n=alive(),c=(d.sf?Math.round(n*.25):0)+(d.sr?Math.round(n*.2):0),inc=d.tl?Math.round(n*.15):0,m=S.me;m.m+=inc-c;if(m.m<0){m.m=0;d.sf=0;d.sr=0;lg('Sem dinheiro na tesouraria, os subsídios foram cancelados.');}};
 (function(){var ok=0;try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&o.me&&o.npcs){S=o;ok=1;}}}catch(e){}$("bz").innerHTML=Object.keys(BZ).map(function(k){return'<option value="'+k+'">'+k+' (custo '+BZ[k].c+(BZ[k].q?', exige '+TG[BZ[k].q]:'')+')</option>';}).join("");initActs();if(!ok)newGame();draw();})();
 </script>
-</body>
+<div id="cardov" class="cov" style="display:none"></div></body>
 </html>
